@@ -1372,7 +1372,17 @@ Note: the 'difficulty' must be one of 'easy', 'medium', or 'hard'. Select 'easy'
     const data = await response.json();
     const textResponse = data.candidates[0].content.parts[0].text;
     
-    const parsed = JSON.parse(textResponse.trim());
+    // Safety check: strip markdown code fences if present
+    let cleanText = textResponse.trim();
+    if (cleanText.startsWith('```')) {
+      const firstNewline = cleanText.indexOf('\n');
+      const lastFence = cleanText.lastIndexOf('```');
+      if (firstNewline !== -1 && lastFence !== -1 && lastFence > firstNewline) {
+        cleanText = cleanText.slice(firstNewline + 1, lastFence).trim();
+      }
+    }
+    
+    const parsed = JSON.parse(cleanText);
     if (!parsed.question || !Array.isArray(parsed.choices) || parsed.choices.length !== 3) {
       throw new Error("Invalid structure returned by AI scanner.");
     }
