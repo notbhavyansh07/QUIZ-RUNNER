@@ -1273,7 +1273,7 @@ function openAIScanner() {
   
   const keyInput = document.getElementById('ai-key-input');
   if (keyInput) {
-    keyInput.value = geminiApiKey;
+    keyInput.value = geminiApiKey || localStorage.getItem('openRouterApiKey') || '';
   }
   
   document.getElementById('ai-preview').style.display = 'none';
@@ -1305,12 +1305,20 @@ async function handleAIScan() {
   
   const key = keyInput.value.trim();
   if (!key) {
-    alert("Please paste your Gemini API Key first! 🔑");
+    alert("Please paste your API Key first! 🔑");
     fileInput.value = '';
     return;
   }
-  localStorage.setItem('geminiApiKey', key);
-  geminiApiKey = key;
+  
+  const isOpenRouter = key.startsWith("sk-or-");
+  if (isOpenRouter) {
+    localStorage.setItem('openRouterApiKey', key);
+    localStorage.removeItem('geminiApiKey');
+    geminiApiKey = '';
+  } else {
+    localStorage.setItem('geminiApiKey', key);
+    geminiApiKey = key;
+  }
 
   const file = fileInput.files[0];
   if (!file) return;
@@ -1327,7 +1335,7 @@ async function handleAIScan() {
 
   try {
     const base64Data = await fileToBase64(file);
-    statusText.textContent = "Uploading to Gemini AI...";
+    statusText.textContent = "Uploading to AI Scanner...";
 
     const prompt = `Analyze this image containing a question and its options. Extract the question text, the correct answer, and up to 2 incorrect answers (distractors). Return ONLY a valid JSON object matching the following structure exactly, without markdown wrapping or comments:
 {
@@ -1342,36 +1350,79 @@ async function handleAIScan() {
 }
 Note: the 'difficulty' must be one of 'easy', 'medium', or 'hard'. Select 'easy' if simple arithmetic, 'medium' if algebra, and 'hard' if complex geometry/formulas. The 'choices' array must have exactly 3 choices, where exactly one choice has isCorrect = true.`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                mimeType: file.type,
-                data: base64Data
-              }
-            }
-          ]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      })
-    });
+    let response;
+    let textResponse = "";
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    if (isOpenRouter) {
+      response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${key}`
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: prompt
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:${file.type};base64,${base64Data}`
+                  }
+                }
+              ]
+            }
+          ],
+          response_format: { type: "json_object" }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      textResponse = data.choices[0].message.content;
+
+    } else {
+      // Direct Gemini endpoint
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: file.type,
+                  data: base64Data
+                }
+              }
+            ]
+          }],
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      textResponse = data.candidates[0].content.parts[0].text;
     }
 
-    const data = await response.json();
-    const textResponse = data.candidates[0].content.parts[0].text;
-    
     // Safety check: strip markdown code fences if present
     let cleanText = textResponse.trim();
     if (cleanText.startsWith('```')) {
