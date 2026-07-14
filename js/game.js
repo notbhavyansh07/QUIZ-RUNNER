@@ -1588,7 +1588,19 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnAiScanner) btnAiScanner.addEventListener('click', openAIScanner);
   if (btnAiBack) btnAiBack.addEventListener('click', closeAIScanner);
   if (btnAiAdd) btnAiAdd.addEventListener('click', addScannedQuestion);
-  if (aiFileInput) aiFileInput.addEventListener('change', handleAIScan);
+  if (aiFileInput) {
+    aiFileInput.addEventListener('change', () => {
+      const fileNameSpan = document.getElementById('ai-file-name');
+      if (fileNameSpan && aiFileInput.files.length > 0) {
+        fileNameSpan.textContent = aiFileInput.files[0].name;
+      } else if (fileNameSpan) {
+        fileNameSpan.textContent = "No file selected";
+      }
+    });
+  }
+  
+  const btnAiScanSubmit = document.getElementById('btn-ai-scan-submit');
+  if (btnAiScanSubmit) btnAiScanSubmit.addEventListener('click', handleAIScan);
   
   // HUD Boards Pill click activation
   if (DOM.boardsPill) {
