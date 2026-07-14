@@ -1361,7 +1361,7 @@ Note: the 'difficulty' must be one of 'easy', 'medium', or 'hard'. Select 'easy'
           'Authorization': `Bearer ${key}`
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "tencent/hy3:free",
           messages: [
             {
               role: "user",
