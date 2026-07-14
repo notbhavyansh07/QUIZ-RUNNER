@@ -1335,9 +1335,9 @@ async function handleAIScan() {
 
   try {
     const base64Data = await fileToBase64(file);
-    statusText.textContent = "Uploading to AI Scanner...";
+    let textResponse = "";
 
-    const prompt = `Analyze this image containing a question and its options. Extract the question text, the correct answer, and up to 2 incorrect answers (distractors). Return ONLY a valid JSON object matching the following structure exactly, without markdown wrapping or comments:
+    const prompt = `Analyze this image/text containing a question and its options. Extract the question text, the correct answer, and up to 2 incorrect answers (distractors). Return ONLY a valid JSON object matching the following structure exactly, without markdown wrapping or comments:
 {
   "question": "The question text here",
   "choices": [
@@ -1350,33 +1350,47 @@ async function handleAIScan() {
 }
 Note: the 'difficulty' must be one of 'easy', 'medium', or 'hard'. Select 'easy' if simple arithmetic, 'medium' if algebra, and 'hard' if complex geometry/formulas. The 'choices' array must have exactly 3 choices, where exactly one choice has isCorrect = true.`;
 
-    let response;
-    let textResponse = "";
-
     if (isOpenRouter) {
-      response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      statusText.textContent = "Extracting text from image locally (OCR)...";
+      let extractedText = "";
+      try {
+        const result = await Tesseract.recognize(file, 'eng');
+        extractedText = result.data.text;
+        console.log("Extracted OCR text:", extractedText);
+        if (!extractedText || !extractedText.trim()) {
+          throw new Error("No readable text found in the image. Please take a clearer photo.");
+        }
+      } catch (ocrErr) {
+        throw new Error("OCR parsing failed: " + ocrErr.message);
+      }
+
+      statusText.textContent = "Uploading text to Tencent Hy3...";
+      
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${key}`
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "tencent/hy3:free",
           messages: [
             {
               role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: prompt
-                },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: `data:${file.type};base64,${base64Data}`
-                  }
-                }
-              ]
+              content: `We scanned an image of a math question. Here is the raw text extracted from it:
+"${extractedText}"
+
+Analyze this text. Find the question and options (or solve the math problem if options aren't clear). Return ONLY a valid JSON object matching the following structure exactly, without markdown wrapping or comments:
+{
+  "question": "The question text here",
+  "choices": [
+    {"text": "Correct Option", "isCorrect": true},
+    {"text": "Incorrect Option 1", "isCorrect": false},
+    {"text": "Incorrect Option 2", "isCorrect": false}
+  ],
+  "difficulty": "easy",
+  "category": "Math"
+}`
             }
           ],
           response_format: { type: "json_object" }
@@ -1399,7 +1413,9 @@ Note: the 'difficulty' must be one of 'easy', 'medium', or 'hard'. Select 'easy'
 
     } else {
       // Direct Gemini endpoint
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+      statusText.textContent = "Uploading image to Gemini AI...";
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
