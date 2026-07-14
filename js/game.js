@@ -155,6 +155,8 @@ const MISSIONS = [
 ];
 
 let completedMissions = JSON.parse(localStorage.getItem('completedMissions')) || [];
+let customQuestions = JSON.parse(localStorage.getItem('customQuestions')) || [];
+let geminiApiKey = localStorage.getItem('geminiApiKey') || '';
 
 // ── DOM Refs ──────────────────────────────────────────────────
 const DOM = {};
@@ -242,6 +244,9 @@ function pickQuestion() {
       throw new Error("Questions data is missing or empty. Check data/questions.js");
     }
 
+    // Merge core QUESTIONS and custom AI questions
+    const allQuestionsPool = [...QUESTIONS, ...customQuestions];
+
     // Determine target difficulty based on Speed level
     const currentLevel = State.levelData.level;
     let targetDifficulty = 'easy';
@@ -249,12 +254,12 @@ function pickQuestion() {
     if (currentLevel >= 5) targetDifficulty = 'hard';
 
     // Filter matching pool
-    const pool = QUESTIONS.filter(q => q.difficulty === targetDifficulty);
-    const activePool = pool.length > 0 ? pool : QUESTIONS;
+    const pool = allQuestionsPool.filter(q => q.difficulty === targetDifficulty);
+    const activePool = pool.length > 0 ? pool : allQuestionsPool;
 
     // Reset used questions for this specific difficulty if all are consumed
     const usedForDiff = Array.from(State.usedQuestions).filter(text => {
-      const found = QUESTIONS.find(q => q.question === text);
+      const found = allQuestionsPool.find(q => q.question === text);
       return found && found.difficulty === targetDifficulty;
     });
 
@@ -938,6 +943,7 @@ function cacheDOMRefs() {
   DOM.boardsPill    = document.getElementById('boards-pill');
   DOM.boardsVal     = document.getElementById('boards-val');
   DOM.powerupsHud   = document.getElementById('powerups-hud');
+  DOM.aiScreen      = document.getElementById('ai-screen');
 }
 
 // ── Hoverboard & Missions Logic ──────────────────────────────
@@ -1258,6 +1264,152 @@ function buyPowerupUpgrade(type) {
 }
 window.buyPowerupUpgrade = buyPowerupUpgrade;
 
+// ── AI Scanner Logic ──────────────────────────────────────────
+let scannedQuestionTemp = null;
+
+function openAIScanner() {
+  DOM.menuScreen.classList.remove('show');
+  DOM.aiScreen.style.display = 'flex';
+  
+  const keyInput = document.getElementById('ai-key-input');
+  if (keyInput) {
+    keyInput.value = geminiApiKey;
+  }
+  
+  document.getElementById('ai-preview').style.display = 'none';
+  document.getElementById('btn-ai-add').style.display = 'none';
+  document.getElementById('ai-status').style.display = 'none';
+  document.getElementById('ai-file-input').value = '';
+  
+  AudioManager.playSwipe();
+}
+
+function closeAIScanner() {
+  DOM.aiScreen.style.display = 'none';
+  DOM.menuScreen.classList.add('show');
+  AudioManager.playSwipe();
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = error => reject(error);
+  });
+}
+
+async function handleAIScan() {
+  const keyInput = document.getElementById('ai-key-input');
+  const fileInput = document.getElementById('ai-file-input');
+  
+  const key = keyInput.value.trim();
+  if (!key) {
+    alert("Please paste your Gemini API Key first! 🔑");
+    fileInput.value = '';
+    return;
+  }
+  localStorage.setItem('geminiApiKey', key);
+  geminiApiKey = key;
+
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const statusDiv = document.getElementById('ai-status');
+  const statusText = document.getElementById('ai-status-text');
+  const previewDiv = document.getElementById('ai-preview');
+  const addBtn = document.getElementById('btn-ai-add');
+
+  statusDiv.style.display = 'block';
+  statusText.textContent = "Converting image...";
+  previewDiv.style.display = 'none';
+  addBtn.style.display = 'none';
+
+  try {
+    const base64Data = await fileToBase64(file);
+    statusText.textContent = "Uploading to Gemini AI...";
+
+    const prompt = `Analyze this image containing a question and its options. Extract the question text, the correct answer, and up to 2 incorrect answers (distractors). Return ONLY a valid JSON object matching the following structure exactly, without markdown wrapping or comments:
+{
+  "question": "The question text here",
+  "choices": [
+    {"text": "Correct Option", "isCorrect": true},
+    {"text": "Incorrect Option 1", "isCorrect": false},
+    {"text": "Incorrect Option 2", "isCorrect": false}
+  ],
+  "difficulty": "easy",
+  "category": "Math"
+}
+Note: the 'difficulty' must be one of 'easy', 'medium', or 'hard'. Select 'easy' if simple arithmetic, 'medium' if algebra, and 'hard' if complex geometry/formulas. The 'choices' array must have exactly 3 choices, where exactly one choice has isCorrect = true.`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType: file.type,
+                data: base64Data
+              }
+            }
+          ]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const textResponse = data.candidates[0].content.parts[0].text;
+    
+    const parsed = JSON.parse(textResponse.trim());
+    if (!parsed.question || !Array.isArray(parsed.choices) || parsed.choices.length !== 3) {
+      throw new Error("Invalid structure returned by AI scanner.");
+    }
+
+    scannedQuestionTemp = parsed;
+
+    document.getElementById('ai-preview-question').textContent = parsed.question;
+    const optsDiv = document.getElementById('ai-preview-options');
+    optsDiv.innerHTML = '';
+    parsed.choices.forEach(c => {
+      const row = document.createElement('div');
+      row.innerHTML = `<span style="color:${c.isCorrect ? '#22c55e' : '#ef4444'}; font-weight:bold; margin-right: 6px;">${c.isCorrect ? '✓' : '✗'}</span> ${c.text}`;
+      optsDiv.appendChild(row);
+    });
+
+    statusDiv.style.display = 'none';
+    previewDiv.style.display = 'block';
+    addBtn.style.display = 'block';
+    showFeedback("📸 Scan completed successfully!", "correct");
+
+  } catch (err) {
+    console.error(err);
+    statusDiv.style.display = 'none';
+    alert("AI Scanning failed! Please make sure your API key is valid and the image contains clear question text. Error: " + err.message);
+  }
+}
+
+function addScannedQuestion() {
+  if (!scannedQuestionTemp) return;
+  customQuestions.push(scannedQuestionTemp);
+  localStorage.setItem('customQuestions', JSON.stringify(customQuestions));
+  scannedQuestionTemp = null;
+  
+  closeAIScanner();
+  showFeedback("✨ Question added to game pool! 🎮", "correct");
+}
+
 function applyBoard(boardId) {
   const board = BOARDS[boardId] || BOARDS.default;
   State.equippedBoardColor = board.color;
@@ -1365,6 +1517,17 @@ document.addEventListener('DOMContentLoaded', () => {
       AudioManager.playSwipe();
     });
   }
+  
+  // AI Scanner Bindings
+  const btnAiScanner = document.getElementById('btn-ai-scanner');
+  const btnAiBack = document.getElementById('btn-ai-back');
+  const btnAiAdd = document.getElementById('btn-ai-add');
+  const aiFileInput = document.getElementById('ai-file-input');
+
+  if (btnAiScanner) btnAiScanner.addEventListener('click', openAIScanner);
+  if (btnAiBack) btnAiBack.addEventListener('click', closeAIScanner);
+  if (btnAiAdd) btnAiAdd.addEventListener('click', addScannedQuestion);
+  if (aiFileInput) aiFileInput.addEventListener('change', handleAIScan);
   
   // HUD Boards Pill click activation
   if (DOM.boardsPill) {

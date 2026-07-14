@@ -741,3 +741,8 @@ html, body {
   color: #fff !important;
   box-shadow: 0 0 12px rgba(251, 191, 36, 0.4);
 }
+
+/* ── Spinner Rotation Keyframes ───────────────────────────── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
