@@ -1361,7 +1361,7 @@ Note: the 'difficulty' must be one of 'easy', 'medium', or 'hard'. Select 'easy'
           'Authorization': `Bearer ${key}`
         },
         body: JSON.stringify({
-          model: "tencent/hy3:free",
+          model: "google/gemini-2.5-flash",
           messages: [
             {
               role: "user",
@@ -1384,7 +1384,14 @@ Note: the 'difficulty' must be one of 'easy', 'medium', or 'hard'. Select 'easy'
       });
 
       if (!response.ok) {
-        throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+        let errMsg = `OpenRouter API error: ${response.status} ${response.statusText}`;
+        try {
+          const errJSON = await response.json();
+          if (errJSON && errJSON.error && errJSON.error.message) {
+            errMsg = `OpenRouter error: ${errJSON.error.message}`;
+          }
+        } catch (e) {}
+        throw new Error(errMsg);
       }
 
       const data = await response.json();
@@ -1416,7 +1423,14 @@ Note: the 'difficulty' must be one of 'easy', 'medium', or 'hard'. Select 'easy'
       });
 
       if (!response.ok) {
-        throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+        let errMsg = `Gemini API error: ${response.status} ${response.statusText}`;
+        try {
+          const errJSON = await response.json();
+          if (errJSON && errJSON.error && errJSON.error.message) {
+            errMsg = `Gemini error: ${errJSON.error.message}`;
+          }
+        } catch (e) {}
+        throw new Error(errMsg);
       }
 
       const data = await response.json();
