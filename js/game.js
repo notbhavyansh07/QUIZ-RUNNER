@@ -872,20 +872,36 @@ function setupInput() {
     touchStartY = e.changedTouches[0].screenY;
   }, { passive: true });
   
-  window.addEventListener('touchend', e => {
+  window.addEventListener('touchmove', e => {
     if (State.phase !== 'playing') return;
-    let touchEndX = e.changedTouches[0].screenX;
-    let touchEndY = e.changedTouches[0].screenY;
+    let touchCurrentX = e.changedTouches[0].screenX;
+    let touchCurrentY = e.changedTouches[0].screenY;
     
-    const dx = touchEndX - touchStartX;
-    const dy = touchEndY - touchStartY;
+    const dx = touchCurrentX - touchStartX;
+    const dy = touchCurrentY - touchStartY;
     
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx < -30) moveCharacter('left');
-      if (dx > 30) moveCharacter('right');
-    } else {
-      if (dy < -30) jumpCharacter();
-      if (dy > 30) duckCharacter();
+    if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx < -30) {
+          moveCharacter('left');
+          touchStartX = touchCurrentX;
+          touchStartY = touchCurrentY;
+        } else if (dx > 30) {
+          moveCharacter('right');
+          touchStartX = touchCurrentX;
+          touchStartY = touchCurrentY;
+        }
+      } else {
+        if (dy < -30) {
+          jumpCharacter();
+          touchStartX = touchCurrentX;
+          touchStartY = touchCurrentY;
+        } else if (dy > 30) {
+          duckCharacter();
+          touchStartX = touchCurrentX;
+          touchStartY = touchCurrentY;
+        }
+      }
     }
   }, { passive: true });
 

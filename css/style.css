@@ -69,23 +69,13 @@ html, body {
 
 #character {
   position: absolute;
-  bottom: 80px;
+  bottom: 70px;
   width: 64px;
   height: 64px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
-  transition: left 0.15s ease-out, bottom 0.2s ease-out, transform 0.15s ease-out;
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
-}
-
-/* Tilt and shake animations for lane changes and crash */
-.tilt-left {
-  transform: translateX(-50%) rotate(-12deg) !important;
-}
-
-.tilt-right {
-  transform: translateX(-50%) rotate(12deg) !important;
 }
 
 .shake {
@@ -322,14 +312,33 @@ html, body {
 
 .screen.show { display: flex; }
 
+@keyframes logo-glow {
+  0% {
+    text-shadow: 0 8px 0 #d97706, 0 0 10px rgba(245, 158, 11, 0.4);
+    transform: rotate(-3deg) scale(1);
+  }
+  50% {
+    text-shadow: 0 8px 0 #d97706, 0 0 25px rgba(245, 158, 11, 0.7), 0 0 35px rgba(167, 139, 250, 0.3);
+    transform: rotate(-2deg) scale(1.03);
+  }
+  100% {
+    text-shadow: 0 8px 0 #d97706, 0 0 10px rgba(245, 158, 11, 0.4);
+    transform: rotate(-3deg) scale(1);
+  }
+}
+
 .screen-logo {
-  font-size: 3.5rem;
+  font-size: 3.6rem;
   font-weight: 900;
-  line-height: 1.1;
+  line-height: 1.05;
   color: #ffffff;
-  -webkit-text-stroke: 3px #f59e0b;
+  -webkit-text-stroke: 2.5px #f59e0b;
   text-shadow: 0 8px 0 #d97706;
   transform: rotate(-3deg);
+  animation: logo-glow 3s ease-in-out infinite;
+  letter-spacing: -0.02em;
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  text-transform: uppercase;
 }
 
 .screen-subtitle {

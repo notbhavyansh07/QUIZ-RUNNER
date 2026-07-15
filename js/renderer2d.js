@@ -187,8 +187,6 @@ const Renderer2D = {
         // 3. Update DOM character positions and squash/tilt animations
         const charDOM = document.getElementById('character');
         if (charDOM) {
-            const leftPct = 50 + this.playerX * 30; // 20%, 50%, 80%
-            
             // Apply sine curve jump visual offset in pixels
             let jumpY = 0;
             if (state.isJumping) {
@@ -198,12 +196,15 @@ const Renderer2D = {
 
             // Train roof elevation offset
             const trainHeightOffset = state.isOnTrain ? 75 : 0;
-            const bottomPx = 70 + this.baseY * 180 + trainHeightOffset + jumpY;  // float up when flying, jumping, or on train
-            charDOM.style.left = `${leftPct}%`;
-            charDOM.style.bottom = `${bottomPx}px`;
+            
+            // Calculate horizontal offset relative to center (50% of game container width)
+            const tx = this.playerX * W * 0.3;
+            
+            // Calculate vertical offset relative to base 70px position
+            const ty = this.baseY * 180 + trainHeightOffset + jumpY;
 
-            // Transform matrix: squash down on ducking, rotate/tilt on lane shifts
-            let transformStr = `translateX(-50%)`;
+            // Transform matrix using hardware-accelerated translate3d to prevent layout reflows!
+            let transformStr = `translate3d(calc(-50% + ${tx}px), ${-ty}px, 0)`;
             if (state.isDucking) {
                 transformStr += ` scaleY(0.42)`; // Squat visual height shrink
             } else {
