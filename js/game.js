@@ -908,12 +908,14 @@ function setupInput() {
   // Menu Buttons
   DOM.btnStart.addEventListener('click', () => {
     State.playCustomOnly = false;
+    AudioManager.playStartWhistle();
     DOM.menuScreen.classList.remove('show');
     startCountdown();
   });
 
   DOM.btnRestart.addEventListener('click', () => {
     resetGame();
+    AudioManager.playStartWhistle();
     DOM.menuScreen.classList.remove('show');
     startCountdown();
   });
@@ -1700,6 +1702,9 @@ function addScannedQuestion() {
   
   // Flag to play only custom questions
   State.playCustomOnly = true;
+  
+  // Play start whistle!
+  AudioManager.playStartWhistle();
   
   // Hide AI scanner screen
   DOM.aiScreen.style.display = 'none';

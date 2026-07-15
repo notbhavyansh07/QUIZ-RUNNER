@@ -47,9 +47,72 @@ const AudioManager = (() => {
 
   function playWrong() {
     init();
-    // Descending "bzzzt"
-    playTone({ frequency: 300, type: 'sawtooth', duration: 0.18, volume: 0.35, delay: 0 });
-    playTone({ frequency: 200, type: 'sawtooth', duration: 0.25, volume: 0.35, delay: 0.15 });
+    const now = ctx.currentTime;
+    
+    // 1. Bass impact thud
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(20, now + 0.18);
+      gain.gain.setValueAtTime(0.55, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      osc.start(now);
+      osc.stop(now + 0.18);
+    } catch (e) {}
+
+    // 2. High-pitch police trill whistle
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+
+      const trillRate = 30; // Hz
+      const mod = ctx.createOscillator();
+      const modGain = ctx.createGain();
+      mod.frequency.value = trillRate;
+      modGain.gain.value = 100; // depth in Hz
+
+      mod.connect(modGain);
+      modGain.connect(osc.frequency);
+
+      osc.frequency.setValueAtTime(1900, now);
+      gain.gain.setValueAtTime(0.24, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+
+      mod.start(now);
+      osc.start(now);
+
+      mod.stop(now + 0.55);
+      osc.stop(now + 0.55);
+    } catch (e) {}
+  }
+
+  function playStartWhistle() {
+    init();
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+
+      const now = ctx.currentTime;
+      osc.frequency.setValueAtTime(500, now);
+      osc.frequency.exponentialRampToValueAtTime(1400, now + 0.18);
+      osc.frequency.exponentialRampToValueAtTime(900, now + 0.35);
+
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+      osc.start(now);
+      osc.stop(now + 0.4);
+    } catch (e) {}
   }
 
   function playCoin() {
@@ -176,25 +239,25 @@ const AudioManager = (() => {
         } catch (e) {}
       }
 
-      // 5. CATCHY OG MELODY LOOP (Subway Surfers-inspired pentatonic blues synth!)
+      // 5. CATCHY OG MELODY LOOP (Subway Surfers-inspired whistle theme!)
       const melodyFreqs = {
-        0: 261.63,  // C4
-        2: 311.13,  // Eb4
-        4: 349.23,  // F4
-        6: 466.16,  // Bb4
-        8: 392.00,  // G4
-        10: 349.23, // F4
-        12: 311.13, // Eb4
-        14: 261.63, // C4
-        16: 261.63, // C4
-        18: 311.13, // Eb4
-        20: 349.23, // F4
-        22: 369.99, // F#4
-        23: 349.23, // F4
-        24: 311.13, // Eb4
-        26: 261.63, // C4
-        28: 233.08, // Bb3
-        30: 261.63  // C4
+        0: 523.25,  // C5
+        2: 622.25,  // Eb5
+        4: 698.46,  // F5
+        6: 932.33,  // Bb5
+        8: 784.00,  // G5
+        10: 698.46, // F5
+        12: 622.25, // Eb5
+        14: 523.25, // C5
+        16: 523.25, // C5
+        18: 622.25, // Eb5
+        20: 698.46, // F5
+        22: 739.99, // F#5
+        23: 698.46, // F5
+        24: 622.25, // Eb5
+        26: 523.25, // C5
+        28: 466.16, // Bb4
+        30: 523.25  // C5
       };
 
       const noteFreq = melodyFreqs[step];
@@ -205,24 +268,36 @@ const AudioManager = (() => {
           
           const filter = ctx.createBiquadFilter();
           filter.type = 'bandpass';
-          filter.frequency.value = 1200;
-          filter.Q.value = 1.0;
+          filter.frequency.value = noteFreq;
+          filter.Q.value = 3.5;
           
           osc.connect(filter);
           filter.connect(gain);
           gain.connect(ctx.destination);
 
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(noteFreq, ctx.currentTime);
+          osc.type = 'sine';
           
-          if (step === 0 || step === 16) {
-            osc.frequency.linearRampToValueAtTime(noteFreq + 5, ctx.currentTime + 0.2);
-          }
-
-          gain.gain.setValueAtTime(0.08, ctx.currentTime);
+          // Realistic whistle slide-in
+          osc.frequency.setValueAtTime(noteFreq * 0.95, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(noteFreq, ctx.currentTime + 0.05);
+          
+          // Soft vibrato
+          const vibratoRate = 6; // Hz
+          const vibratoOsc = ctx.createOscillator();
+          const vibratoGain = ctx.createGain();
+          vibratoOsc.frequency.value = vibratoRate;
+          vibratoGain.gain.value = 6; // vibrato depth in Hz
+          
+          vibratoOsc.connect(vibratoGain);
+          vibratoGain.connect(osc.frequency);
+          
+          gain.gain.setValueAtTime(0.09, ctx.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
           
+          vibratoOsc.start(ctx.currentTime);
           osc.start(ctx.currentTime);
+          
+          vibratoOsc.stop(ctx.currentTime + 0.22);
           osc.stop(ctx.currentTime + 0.22);
         } catch (e) {}
       }
@@ -238,5 +313,5 @@ const AudioManager = (() => {
     }
   }
 
-  return { init, playSwipe, playCorrect, playWrong, playCoin, playLevelUp, playCountdown, startBeat, stopBeat };
+  return { init, playSwipe, playCorrect, playWrong, playCoin, playLevelUp, playCountdown, startBeat, stopBeat, playStartWhistle };
 })();
