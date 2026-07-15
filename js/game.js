@@ -1919,6 +1919,13 @@ document.addEventListener('DOMContentLoaded', () => {
   updateHUD();
   DOM.menuScreen.classList.add('show');
   
+  // Resume Audio Context on first player gesture (fixes mobile autoplay blocks)
+  const resumeAudio = () => {
+    AudioManager.init();
+  };
+  document.addEventListener('click', resumeAudio, { once: true });
+  document.addEventListener('touchstart', resumeAudio, { once: true });
+  
   // Start the background rendering immediately
   lastTime = performance.now();
   requestAnimationFrame(gameLoop);

@@ -10,6 +10,9 @@ const AudioManager = (() => {
     if (!ctx) {
       ctx = new (window.AudioContext || window.webkitAudioContext)();
     }
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume();
+    }
   }
 
   // Generic tone generator
