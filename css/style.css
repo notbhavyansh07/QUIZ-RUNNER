@@ -51,6 +51,7 @@ html, body {
   margin: 0 auto;
   overflow: hidden;
   background: var(--clr-bg);
+  touch-action: none;
 }
 
 /* Hide old 2D elements except character */
@@ -482,6 +483,7 @@ html, body {
   box-shadow: 0 6px 0 #d97706, 0 10px 15px rgba(0,0,0,0.1);
   transition: transform .1s, box-shadow .1s;
   -webkit-tap-highlight-color: transparent;
+  touch-action: none;
 }
 
 .ctrl-btn:active {

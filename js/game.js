@@ -377,7 +377,6 @@ function moveCharacter(dir) {
 
   if (State.targetLane !== prev) {
     AudioManager.playSwipe();
-    Renderer2D.triggerShake(3.5);
   }
 }
 
