@@ -244,8 +244,8 @@ function pickQuestion() {
       throw new Error("Questions data is missing or empty. Check data/questions.js");
     }
 
-    // Merge core QUESTIONS and custom AI questions
-    const allQuestionsPool = [...QUESTIONS, ...customQuestions];
+    // If the user has custom scanned questions, ONLY play those!
+    const allQuestionsPool = customQuestions.length > 0 ? customQuestions : QUESTIONS;
 
     // Determine target difficulty based on Speed level
     const currentLevel = State.levelData.level;
@@ -1341,20 +1341,29 @@ function normalizeModelOutput(parsed) {
     if (!matched) choices[0].isCorrect = true;
   }
   
-  if (choices.length < 3) {
-    while (choices.length < 3) {
-      choices.push({ text: "Option " + (choices.length + 1), isCorrect: false });
+  // Adapt 4-choices to exactly 3 choices by preserving the correct option
+  const correctChoice = choices.find(c => c.isCorrect) || { text: "Correct Option", isCorrect: true };
+  const incorrectChoices = choices.filter(c => !c.isCorrect);
+  
+  let selectedIncorrect = [];
+  if (incorrectChoices.length >= 2) {
+    selectedIncorrect = incorrectChoices.slice(0, 2);
+  } else {
+    selectedIncorrect = [...incorrectChoices];
+    while (selectedIncorrect.length < 2) {
+      selectedIncorrect.push({ text: "Option " + (selectedIncorrect.length + 1), isCorrect: false });
     }
-  } else if (choices.length > 3) {
-    choices = choices.slice(0, 3);
   }
   
-  const correctCount = choices.filter(c => c.isCorrect).length;
+  const finalChoices = [correctChoice, ...selectedIncorrect];
+  
+  // Ensure exactly one correct answer is present
+  const correctCount = finalChoices.filter(c => c.isCorrect).length;
   if (correctCount === 0) {
-    choices[0].isCorrect = true;
+    finalChoices[0].isCorrect = true;
   } else if (correctCount > 1) {
     let foundFirst = false;
-    choices.forEach(c => {
+    finalChoices.forEach(c => {
       if (c.isCorrect) {
         if (!foundFirst) foundFirst = true;
         else c.isCorrect = false;
@@ -1362,9 +1371,14 @@ function normalizeModelOutput(parsed) {
     });
   }
   
+  const options = finalChoices.map(c => c.text);
+  const correctIndex = finalChoices.findIndex(c => c.isCorrect);
+  
   return {
     question,
-    choices,
+    options,
+    correctIndex: correctIndex !== -1 ? correctIndex : 0,
+    choices: finalChoices, // kept for scanner preview cards
     difficulty: parsed.difficulty || "easy",
     category: parsed.category || "Math"
   };
@@ -1408,18 +1422,22 @@ async function handleAIScan() {
     const base64Data = await fileToBase64(file);
     let textResponse = "";
 
-    const prompt = `Analyze this image/text containing a question and its options. Extract the question text, the correct answer, and up to 2 incorrect answers (distractors). Return ONLY a valid JSON object matching the following structure exactly, without markdown wrapping or comments:
+    const prompt = `Analyze this image containing multiple questions and options. Extract ALL questions, their correct answers, and incorrect options. Return ONLY a valid JSON object matching the following structure exactly, containing a list of questions, without markdown wrapping or comments:
 {
-  "question": "The question text here",
-  "choices": [
-    {"text": "Correct Option", "isCorrect": true},
-    {"text": "Incorrect Option 1", "isCorrect": false},
-    {"text": "Incorrect Option 2", "isCorrect": false}
-  ],
-  "difficulty": "easy",
-  "category": "Math"
+  "questions": [
+    {
+      "question": "Question text here",
+      "choices": [
+        {"text": "Correct Option", "isCorrect": true},
+        {"text": "Incorrect Option 1", "isCorrect": false},
+        {"text": "Incorrect Option 2", "isCorrect": false}
+      ],
+      "difficulty": "easy",
+      "category": "Math"
+    }
+  ]
 }
-Note: the 'difficulty' must be one of 'easy', 'medium', or 'hard'. Select 'easy' if simple arithmetic, 'medium' if algebra, and 'hard' if complex geometry/formulas. The 'choices' array must have exactly 3 choices, where exactly one choice has isCorrect = true.`;
+Note: each question must have exactly 3 choices, where exactly one choice has isCorrect = true. 'difficulty' must be one of 'easy', 'medium', or 'hard'. If a question has 4 options in the image, select 3 of them including the correct one, and discard the 4th.`;
 
     if (isOpenRouter) {
       statusText.textContent = "Extracting text from image locally (OCR)...";
@@ -1448,20 +1466,25 @@ Note: the 'difficulty' must be one of 'easy', 'medium', or 'hard'. Select 'easy'
           messages: [
             {
               role: "user",
-              content: `We scanned an image of a math question. Here is the raw text extracted from it:
+              content: `We scanned an image of a math worksheet. Here is the raw text extracted from it:
 "${extractedText}"
 
-Analyze this text. Find the question and options (or solve the math problem if options aren't clear). Return ONLY a valid JSON object matching the following structure exactly, without markdown wrapping or comments:
+Analyze this text. Find ALL questions and options. Return ONLY a valid JSON object matching the following structure exactly, containing a list of all identified questions, without markdown wrapping or comments:
 {
-  "question": "The question text here",
-  "choices": [
-    {"text": "Correct Option", "isCorrect": true},
-    {"text": "Incorrect Option 1", "isCorrect": false},
-    {"text": "Incorrect Option 2", "isCorrect": false}
-  ],
-  "difficulty": "easy",
-  "category": "Math"
-}`
+  "questions": [
+    {
+      "question": "Question text here",
+      "choices": [
+        {"text": "Correct Option", "isCorrect": true},
+        {"text": "Incorrect Option 1", "isCorrect": false},
+        {"text": "Incorrect Option 2", "isCorrect": false}
+      ],
+      "difficulty": "easy",
+      "category": "Math"
+    }
+  ]
+}
+Note: each question must have exactly 3 choices, where exactly one choice has isCorrect = true. 'difficulty' must be one of 'easy', 'medium', or 'hard'. If a question in the OCR text has 4 options, select 3 options including the correct one, and discard the 4th option.`
             }
           ]
         })
@@ -1528,17 +1551,40 @@ Analyze this text. Find the question and options (or solve the math problem if o
     const parsedRaw = JSON.parse(jsonString);
     const parsed = normalizeModelOutput(parsedRaw);
 
-    scannedQuestionTemp = parsed;
+    scannedQuestionTemp = parsed; // Array of questions
 
-    document.getElementById('ai-preview-question').textContent = parsed.question;
+    document.getElementById('ai-preview-question').textContent = `Scanned ${parsed.length} Questions:`;
     const optsDiv = document.getElementById('ai-preview-options');
     optsDiv.innerHTML = '';
-    parsed.choices.forEach(c => {
-      const row = document.createElement('div');
-      row.innerHTML = `<span style="color:${c.isCorrect ? '#22c55e' : '#ef4444'}; font-weight:bold; margin-right: 6px;">${c.isCorrect ? '✓' : '✗'}</span> ${c.text}`;
-      optsDiv.appendChild(row);
+    
+    parsed.forEach((q, idx) => {
+      const qBlock = document.createElement('div');
+      qBlock.style.margin = '8px 0';
+      qBlock.style.padding = '8px';
+      qBlock.style.background = 'rgba(255,255,255,0.03)';
+      qBlock.style.borderRadius = '8px';
+      qBlock.style.border = '1px solid rgba(255,255,255,0.05)';
+      
+      const qTitle = document.createElement('div');
+      qTitle.style.fontWeight = '800';
+      qTitle.style.fontSize = '0.78rem';
+      qTitle.style.color = '#e2e8f0';
+      qTitle.style.marginBottom = '4px';
+      qTitle.textContent = `${idx + 1}. ${q.question} (${q.difficulty.toUpperCase()})`;
+      qBlock.appendChild(qTitle);
+      
+      q.choices.forEach(c => {
+        const row = document.createElement('div');
+        row.style.fontSize = '0.7rem';
+        row.style.color = '#cbd5e1';
+        row.innerHTML = `<span style="color:${c.isCorrect ? '#22c55e' : '#ef4444'}; font-weight:bold; margin-right: 6px;">${c.isCorrect ? '✓' : '✗'}</span> ${c.text}`;
+        qBlock.appendChild(row);
+      });
+      
+      optsDiv.appendChild(qBlock);
     });
 
+    addBtn.textContent = `Add all ${parsed.length} Questions`;
     statusDiv.style.display = 'none';
     previewDiv.style.display = 'block';
     addBtn.style.display = 'block';
@@ -1552,13 +1598,13 @@ Analyze this text. Find the question and options (or solve the math problem if o
 }
 
 function addScannedQuestion() {
-  if (!scannedQuestionTemp) return;
-  customQuestions.push(scannedQuestionTemp);
+  if (!scannedQuestionTemp || scannedQuestionTemp.length === 0) return;
+  customQuestions = [...customQuestions, ...scannedQuestionTemp];
   localStorage.setItem('customQuestions', JSON.stringify(customQuestions));
   scannedQuestionTemp = null;
   
   closeAIScanner();
-  showFeedback("✨ Question added to game pool! 🎮", "correct");
+  showFeedback("✨ Scanned worksheet added to game pool! 🎮", "correct");
 }
 
 function applyBoard(boardId) {
