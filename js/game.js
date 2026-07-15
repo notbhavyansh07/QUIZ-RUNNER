@@ -1288,7 +1288,7 @@ let scannedQuestionTemp = null;
 
 function openAIScanner() {
   DOM.menuScreen.classList.remove('show');
-  DOM.aiScreen.style.display = 'flex';
+  DOM.aiScreen.style.display = 'block';
   
   document.getElementById('ai-preview').style.display = 'none';
   document.getElementById('btn-ai-add').style.display = 'none';
