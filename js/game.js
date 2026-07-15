@@ -155,7 +155,26 @@ const MISSIONS = [
 ];
 
 let completedMissions = JSON.parse(localStorage.getItem('completedMissions')) || [];
-let customQuestions = JSON.parse(localStorage.getItem('customQuestions')) || [];
+let customQuestions = [];
+try {
+  const saved = localStorage.getItem('customQuestions');
+  if (saved) {
+    const parsedList = JSON.parse(saved);
+    if (Array.isArray(parsedList)) {
+      customQuestions = parsedList.map(q => {
+        if (q && !q.options && q.choices) {
+          const options = q.choices.map(c => c.text);
+          const correctIndex = q.choices.findIndex(c => c.isCorrect);
+          q.options = options;
+          q.correctIndex = correctIndex !== -1 ? correctIndex : 0;
+        }
+        return q;
+      }).filter(q => q && q.question && q.options && q.options.length === 3);
+    }
+  }
+} catch (e) {
+  console.error("Failed to load customQuestions:", e);
+}
 let geminiApiKey = localStorage.getItem('geminiApiKey') || '';
 
 // ── DOM Refs ──────────────────────────────────────────────────
@@ -244,26 +263,23 @@ function pickQuestion() {
       throw new Error("Questions data is missing or empty. Check data/questions.js");
     }
 
-    // If the user has custom scanned questions, ONLY play those!
-    const allQuestionsPool = customQuestions.length > 0 ? customQuestions : QUESTIONS;
-
-    // Determine target difficulty based on Speed level
-    const currentLevel = State.levelData.level;
+    let activePool = QUESTIONS;
     let targetDifficulty = 'easy';
-    if (currentLevel === 3 || currentLevel === 4) targetDifficulty = 'medium';
-    if (currentLevel >= 5) targetDifficulty = 'hard';
 
-    // Filter matching pool
-    const pool = allQuestionsPool.filter(q => q.difficulty === targetDifficulty);
-    const activePool = pool.length > 0 ? pool : allQuestionsPool;
+    if (customQuestions.length > 0) {
+      activePool = customQuestions;
+    } else {
+      const currentLevel = State.levelData.level;
+      if (currentLevel === 3 || currentLevel === 4) targetDifficulty = 'medium';
+      if (currentLevel >= 5) targetDifficulty = 'hard';
 
-    // Reset used questions for this specific difficulty if all are consumed
-    const usedForDiff = Array.from(State.usedQuestions).filter(text => {
-      const found = allQuestionsPool.find(q => q.question === text);
-      return found && found.difficulty === targetDifficulty;
-    });
+      const pool = QUESTIONS.filter(q => q.difficulty === targetDifficulty);
+      activePool = pool.length > 0 ? pool : QUESTIONS;
+    }
 
-    if (usedForDiff.length >= activePool.length) {
+    // Reset used questions for this pool if all are consumed
+    const unusedCount = activePool.filter(q => !State.usedQuestions.has(q.question)).length;
+    if (unusedCount === 0) {
       activePool.forEach(q => State.usedQuestions.delete(q.question));
     }
 
@@ -291,6 +307,7 @@ function pickQuestion() {
     showDiagnosticError("pickQuestion Error: " + err.message);
   }
 }
+
 
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
