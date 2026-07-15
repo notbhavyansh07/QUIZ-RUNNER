@@ -377,6 +377,7 @@ function moveCharacter(dir) {
 
   if (State.targetLane !== prev) {
     AudioManager.playSwipe();
+    Renderer2D.triggerShake(3.5);
     // Tilt the character (we handle this in 3D now, but can keep class for extra juice if needed)
     DOM.character.classList.remove('tilt-left', 'tilt-right');
     void DOM.character.offsetWidth; // reflow
@@ -447,6 +448,7 @@ function handleCollision(collision) {
     if (State.hoverboardActive) {
       deactivateHoverboard();
       AudioManager.playWrong(); // break sound
+      Renderer2D.triggerShake(20);
       
       DOM.character.classList.add('shake');
       setTimeout(() => DOM.character.classList.remove('shake'), 400);
@@ -480,6 +482,7 @@ window.handleBypass = function() {
 
 function handleCorrect(laneIndex, pos) {
   AudioManager.playCorrect();
+  Renderer2D.triggerShake(8);
 
   const multiplierFactor = State.multiplierActive ? 2 : 1;
   const coinsAdded = State.levelData.coinsPerCorrect * Math.min(State.combo, 3) * multiplierFactor;
@@ -518,6 +521,7 @@ function handleCorrect(laneIndex, pos) {
 
 function handleWrong(laneIndex) {
   AudioManager.playWrong();
+  Renderer2D.triggerShake(30);
   State.combo = 0;
 
   // Shake character

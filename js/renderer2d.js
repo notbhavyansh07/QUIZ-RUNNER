@@ -12,6 +12,11 @@ const Renderer2D = {
     bgOffset: 0,
     skyStars: [],
     stateIsFlying: false,
+    shakeStrength: 0,
+
+    triggerShake(strength) {
+        this.shakeStrength = strength;
+    },
 
     init() {
         const container = document.getElementById('game-container');
@@ -175,6 +180,48 @@ const Renderer2D = {
         const centerX = W / 2;
 
         this.stateIsFlying = state.isFlying;
+
+        // Decay camera shake strength
+        if (this.shakeStrength > 0) {
+            this.shakeStrength = Math.max(0, this.shakeStrength - 0.7 * dt);
+        }
+
+        // Spawn running/hoverboard particles trail
+        if (state.phase === 'playing') {
+            const px = W * (0.5 + this.playerX * 0.3);
+            const py = H * (state.isFlying ? 0.35 : 0.88);
+            
+            // Hoverboard particle trail (glowing neon cyan/green/purple trail)
+            if (state.hoverboardActive) {
+                const color = state.equippedBoardColor || '#c084fc';
+                for (let k = 0; k < 2; k++) {
+                    this.particles.push({
+                        x: px + (Math.random() * 20 - 10),
+                        y: py,
+                        vx: Math.random() * 2 - 1,
+                        vy: 2 + Math.random() * 3,
+                        color: color,
+                        size: 3 + Math.random() * 4,
+                        life: 0.8,
+                        decay: 0.04
+                    });
+                }
+            } else if (!state.isFlying && !state.isJumping) {
+                // Running dust particles (soft gray/brown dust)
+                if (Math.random() < 0.28) {
+                    this.particles.push({
+                        x: px + (Math.random() * 10 - 5),
+                        y: py,
+                        vx: Math.random() * 2 - 1,
+                        vy: 1 + Math.random() * 2,
+                        color: '#94a3b8',
+                        size: 2 + Math.random() * 3,
+                        life: 0.5,
+                        decay: 0.05
+                    });
+                }
+            }
+        }
 
         // 1. Move Player Horizontally
         const targetX = state.targetLane - 1; // -1, 0, 1
@@ -389,11 +436,19 @@ const Renderer2D = {
         const ctx = this.ctx;
         ctx.clearRect(0, 0, W, H);
 
-        // ── SKY GRADIENT ──
+        ctx.save();
+        if (this.shakeStrength > 0) {
+            const sx = (Math.random() * 2 - 1) * this.shakeStrength;
+            const sy = (Math.random() * 2 - 1) * this.shakeStrength;
+            ctx.translate(sx, sy);
+        }
+
+        // ── SKY GRADIENT (Smooth Synthwave Sunset Shift) ──
         const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
-        skyGrad.addColorStop(0, '#050510'); 
-        skyGrad.addColorStop(0.6, '#180f30'); 
-        skyGrad.addColorStop(1, '#3c1042'); 
+        const hue = (this.bgOffset * 0.04) % 360;
+        skyGrad.addColorStop(0, `hsl(${hue}, 45%, 8%)`); 
+        skyGrad.addColorStop(0.6, `hsl(${(hue + 25) % 360}, 55%, 12%)`); 
+        skyGrad.addColorStop(1, `hsl(${(hue + 50) % 360}, 65%, 18%)`); 
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, W, horizonY);
 
@@ -604,6 +659,7 @@ const Renderer2D = {
             }
             ctx.restore();
         }
+        ctx.restore(); // Restore camera shake translate!
     },
 
     drawSynthwaveSun(ctx, W, H, horizonY, centerX) {
