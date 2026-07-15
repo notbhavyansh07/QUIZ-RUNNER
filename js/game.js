@@ -1355,7 +1355,8 @@ function extractJSON(str) {
   return str;
 }
 
-function normalizeModelOutput(parsed) {
+function normalizeSingleQuestion(parsed) {
+  if (!parsed) return null;
   let question = parsed.question || parsed.text || parsed.problem || "";
   let rawChoices = parsed.choices || parsed.options || parsed.answers || parsed.choices_list || [];
   let choices = [];
@@ -1429,6 +1430,27 @@ function normalizeModelOutput(parsed) {
     difficulty: parsed.difficulty || "easy",
     category: parsed.category || "Math"
   };
+}
+
+function normalizeModelOutput(parsed) {
+  if (!parsed) return [];
+  
+  let list = [];
+  if (Array.isArray(parsed)) {
+    list = parsed;
+  } else if (parsed.questions && Array.isArray(parsed.questions)) {
+    list = parsed.questions;
+  } else if (parsed.list && Array.isArray(parsed.list)) {
+    list = parsed.list;
+  } else if (parsed.results && Array.isArray(parsed.results)) {
+    list = parsed.results;
+  } else {
+    list = [parsed];
+  }
+  
+  return list
+    .map(q => normalizeSingleQuestion(q))
+    .filter(q => q && typeof q.question === 'string' && q.question.trim().length > 0);
 }
 
 async function handleAIScan() {
