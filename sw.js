@@ -1,4 +1,4 @@
-const CACHE_NAME = 'quizrunner-v1';
+const CACHE_NAME = 'quizrunner-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -12,10 +12,26 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       return cache.addAll(ASSETS).catch(err => console.log("SW Caching error: ", err));
     })
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys => {
+      return Promise.all(
+        keys.map(key => {
+          if (key !== CACHE_NAME) {
+            console.log("Removing old cache:", key);
+            return caches.delete(key);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
   );
 });
 
