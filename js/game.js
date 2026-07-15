@@ -1299,6 +1299,77 @@ function fileToBase64(file) {
   });
 }
 
+function extractJSON(str) {
+  const firstBrace = str.indexOf('{');
+  const lastBrace = str.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    return str.slice(firstBrace, lastBrace + 1);
+  }
+  return str;
+}
+
+function normalizeModelOutput(parsed) {
+  let question = parsed.question || parsed.text || parsed.problem || "";
+  let rawChoices = parsed.choices || parsed.options || parsed.answers || parsed.choices_list || [];
+  let choices = [];
+  
+  if (Array.isArray(rawChoices)) {
+    rawChoices.forEach(item => {
+      if (typeof item === 'string') {
+        const correctText = String(parsed.correct || parsed.answer || parsed.correct_answer || "").trim();
+        choices.push({
+          text: item,
+          isCorrect: (item.trim() === correctText)
+        });
+      } else if (item && typeof item === 'object') {
+        const text = item.text || item.option || item.answer || item.value || "";
+        const isCorrect = !!(item.isCorrect || item.correct || item.is_correct || item.isCorrectAnswer);
+        choices.push({ text, isCorrect });
+      }
+    });
+  }
+  
+  if (choices.length > 0 && !choices.some(c => c.isCorrect)) {
+    const correctText = String(parsed.correct || parsed.answer || parsed.correct_answer || "").trim();
+    let matched = false;
+    choices.forEach(c => {
+      if (c.text.trim() === correctText) {
+        c.isCorrect = true;
+        matched = true;
+      }
+    });
+    if (!matched) choices[0].isCorrect = true;
+  }
+  
+  if (choices.length < 3) {
+    while (choices.length < 3) {
+      choices.push({ text: "Option " + (choices.length + 1), isCorrect: false });
+    }
+  } else if (choices.length > 3) {
+    choices = choices.slice(0, 3);
+  }
+  
+  const correctCount = choices.filter(c => c.isCorrect).length;
+  if (correctCount === 0) {
+    choices[0].isCorrect = true;
+  } else if (correctCount > 1) {
+    let foundFirst = false;
+    choices.forEach(c => {
+      if (c.isCorrect) {
+        if (!foundFirst) foundFirst = true;
+        else c.isCorrect = false;
+      }
+    });
+  }
+  
+  return {
+    question,
+    choices,
+    difficulty: parsed.difficulty || "easy",
+    category: parsed.category || "Math"
+  };
+}
+
 async function handleAIScan() {
   const keyInput = document.getElementById('ai-key-input');
   const fileInput = document.getElementById('ai-file-input');
@@ -1452,20 +1523,10 @@ Analyze this text. Find the question and options (or solve the math problem if o
       textResponse = data.candidates[0].content.parts[0].text;
     }
 
-    // Safety check: strip markdown code fences if present
-    let cleanText = textResponse.trim();
-    if (cleanText.startsWith('```')) {
-      const firstNewline = cleanText.indexOf('\n');
-      const lastFence = cleanText.lastIndexOf('```');
-      if (firstNewline !== -1 && lastFence !== -1 && lastFence > firstNewline) {
-        cleanText = cleanText.slice(firstNewline + 1, lastFence).trim();
-      }
-    }
-    
-    const parsed = JSON.parse(cleanText);
-    if (!parsed.question || !Array.isArray(parsed.choices) || parsed.choices.length !== 3) {
-      throw new Error("Invalid structure returned by AI scanner.");
-    }
+    // Safety check: extract JSON structure only, ignoring conversational intro/outro text
+    const jsonString = extractJSON(textResponse);
+    const parsedRaw = JSON.parse(jsonString);
+    const parsed = normalizeModelOutput(parsedRaw);
 
     scannedQuestionTemp = parsed;
 
