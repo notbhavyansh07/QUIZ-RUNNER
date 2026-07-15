@@ -316,5 +316,58 @@ const AudioManager = (() => {
     }
   }
 
-  return { init, playSwipe, playCorrect, playWrong, playCoin, playLevelUp, playCountdown, startBeat, stopBeat, playStartWhistle };
+  function playMemeLine(skinId, eventType) {
+    if (!('speechSynthesis' in window) || window.AudioManagerMuted) return;
+    
+    // Cancel any ongoing speech to prevent overlapping dialogs
+    try { window.speechSynthesis.cancel(); } catch(e){}
+
+    const lines = {
+      modi: {
+        start: "Mitron! Aaj game shuru karte hain!",
+        correct: "Wah Modi Ji Wah!",
+        wrong: "Arey yaar! Rahul Ji Prime Minister ban gaye!"
+      },
+      rahul: {
+        start: "Aloo daaloge sona nikalega! Game shuru!",
+        correct: "Maza aaya!",
+        wrong: "Khatam! Bye bye! Tata! Goodbye!"
+      },
+      meloni: {
+        start: "Hello friends! Melodi is back!",
+        correct: "Perfect match!",
+        wrong: "No melodi today! Ciao!"
+      },
+      salman: {
+        start: "Bhai is running! Footpath se door raho!",
+        correct: "Bhai rocks, barrier shocks!",
+        wrong: "Gaadi mai nahi chala raha tha! Driver ko bulao!"
+      },
+      gandhi: {
+        start: "Ahinsa param dharmo. Run for peace!",
+        correct: "Satyameva Jayate!",
+        wrong: "Hey Ram! Bapu is down!"
+      }
+    };
+
+    const charLines = lines[skinId];
+    if (charLines && charLines[eventType]) {
+      try {
+        const utterance = new SpeechSynthesisUtterance(charLines[eventType]);
+        
+        // Pick custom voice settings for premium voice acting quality!
+        const voices = window.speechSynthesis.getVoices();
+        const indVoice = voices.find(v => v.lang.includes('IN') || v.lang.includes('hi'));
+        if (indVoice) utterance.voice = indVoice;
+        
+        utterance.rate = 1.05; // arcade pacing
+        utterance.pitch = skinId === 'gandhi' ? 0.75 : (skinId === 'meloni' ? 1.2 : 0.95);
+        utterance.volume = 0.95;
+        
+        window.speechSynthesis.speak(utterance);
+      } catch(e) {}
+    }
+  }
+
+  return { init, playSwipe, playCorrect, playWrong, playCoin, playLevelUp, playCountdown, startBeat, stopBeat, playStartWhistle, playMemeLine };
 })();

@@ -766,3 +766,52 @@ html, body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ── Political Meme Mod Classes ──────────────────────────── */
+#character.char-modi {
+  --char-arm: #fbcfe8;
+  --char-leg: #f97316;
+  --char-shoe: #ffffff;
+}
+#character.char-modi .detail-beard,
+#character.char-modi .detail-round-glasses,
+#character.char-modi .detail-kurta {
+  display: block !important;
+}
+
+#character.char-rahul {
+  --char-arm: #fbcfe8;
+  --char-leg: #e2e8f0;
+  --char-shoe: #22c55e;
+}
+#character.char-rahul .detail-white-kurta {
+  display: block !important;
+}
+
+#character.char-meloni {
+  --char-arm: #fbcfe8;
+  --char-leg: #0891b2;
+  --char-shoe: #ffffff;
+}
+#character.char-meloni .detail-blonde-hair {
+  display: block !important;
+}
+
+#character.char-salman {
+  --char-arm: #fbcfe8;
+  --char-leg: #1d4ed8;
+  --char-shoe: #3b82f6;
+}
+#character.char-salman .detail-sunglasses {
+  display: block !important;
+}
+
+#character.char-gandhi {
+  --char-arm: #fbcfe8;
+  --char-leg: #cbd5e1;
+  --char-shoe: #cbd5e1;
+}
+#character.char-gandhi .detail-round-glasses,
+#character.char-gandhi .detail-shawl {
+  display: block !important;
+}

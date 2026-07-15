@@ -72,6 +72,61 @@ const SKINS = {
       helmet: ['#334155', '#0f172a'],
       badge: '🚀'
     }
+  },
+  modi: {
+    id: 'modi',
+    name: 'Modi Ji 🇮🇳',
+    desc: 'Runs in a saffron Nehru jacket and white beard. Mitron!',
+    cost: 50,
+    colors: {
+      body: ['#f97316', '#ea580c'],
+      helmet: ['#ffe4e6', '#fecdd3'],
+      badge: '🇮🇳'
+    }
+  },
+  rahul: {
+    id: 'rahul',
+    name: 'Rahul Ji 🍀',
+    desc: 'White kurta and green shoes. Says: Khatam, bye bye, tata!',
+    cost: 50,
+    colors: {
+      body: ['#ffffff', '#cbd5e1'],
+      helmet: ['#ffe4e6', '#fecdd3'],
+      badge: '🍀'
+    }
+  },
+  meloni: {
+    id: 'meloni',
+    name: 'Meloni 🍕',
+    desc: 'Runs in cyan with long blonde hair. Melodi is real!',
+    cost: 50,
+    colors: {
+      body: ['#06b6d4', '#0891b2'],
+      helmet: ['#ffe4e6', '#fecdd3'],
+      badge: '🇮🇹'
+    }
+  },
+  salman: {
+    id: 'salman',
+    name: 'Salman Bhai 🕶️',
+    desc: 'Denim blue and cool shades. (Bhai was not driving!)',
+    cost: 50,
+    colors: {
+      body: ['#2563eb', '#1d4ed8'],
+      helmet: ['#ffe4e6', '#fecdd3'],
+      badge: '🕶️'
+    }
+  },
+  gandhi: {
+    id: 'gandhi',
+    name: 'Mahatma Gandhi 🕊️',
+    desc: 'White shawl and circular round glasses. Satyameva Jayate!',
+    cost: 50,
+    colors: {
+      body: ['#f8fafc', '#e2e8f0'],
+      helmet: ['#ffe4e6', '#fecdd3'],
+      badge: '🕊️'
+    }
   }
 };
 
@@ -478,6 +533,7 @@ window.handleBypass = function() {
 function handleCorrect(laneIndex, pos) {
   AudioManager.playCorrect();
   Renderer2D.triggerShake(8);
+  AudioManager.playMemeLine(equippedSkin, 'correct');
 
   const multiplierFactor = State.multiplierActive ? 2 : 1;
   const coinsAdded = State.levelData.coinsPerCorrect * Math.min(State.combo, 3) * multiplierFactor;
@@ -517,6 +573,7 @@ function handleCorrect(laneIndex, pos) {
 function handleWrong(laneIndex) {
   AudioManager.playWrong();
   Renderer2D.triggerShake(30);
+  AudioManager.playMemeLine(equippedSkin, 'wrong');
   State.combo = 0;
 
   // Shake character
@@ -608,6 +665,7 @@ function startPlaying() {
   State.speed = State.levelData.speed;
   
   AudioManager.startBeat(State.levelData.level); // Start procedural backing beat!
+  AudioManager.playMemeLine(equippedSkin, 'start'); // Play starting voice line!
   startDodgePhase();
 }
 
@@ -807,7 +865,40 @@ function showGameOver() {
   DOM.goCoins.textContent = State.coins;
   DOM.goAnswered.textContent = State.questionsAnswered;
   DOM.goLevel.textContent = State.levelData.label;
-  DOM.goFunnyMsg.textContent = WRONG_MSGS[Math.floor(Math.random() * WRONG_MSGS.length)];
+  const politicalStories = {
+    modi: [
+      "📰 BREAKING: Modi Ji hit a barrier! Rahul Ji has finally been declared the Prime Minister! 🇮🇳",
+      "📰 NEWS: Saffron Hoverboard crashed! Parliament calls for an emergency session!",
+      "📰 HEADLINE: Amit Shah says: 'Abki baar, barrier paar nahi ho paya!'"
+    ],
+    rahul: [
+      "📰 BREAKING: Rahul Ji crashed! Sona nikalne ki machine has stopped working!",
+      "📰 NEWS: Kurta caught in obstacle! Modi Ji sweeps the state elections!",
+      "📰 HEADLINE: Parliament declares: 'Khatam! Tata! Bye bye! Goodbye!'"
+    ],
+    meloni: [
+      "📰 BREAKING: Meloni hit a divider! Modi Ji has sent a rescue hovercraft!",
+      "📰 NEWS: Melodi vibes check failed! G7 Summit has been postponed!",
+      "📰 HEADLINE: Italy demands answers! Meloni says: 'Hello friends!'"
+    ],
+    salman: [
+      "📰 BREAKING: Salman crashed! The driver claims he was the one riding the hoverboard!",
+      "📰 NEWS: SUV Hoverboard collided! Blackbuck spotted running safely away!",
+      "📰 HEADLINE: Court summons Salman: 'Barrier was on the footpath!'"
+    ],
+    gandhi: [
+      "📰 BREAKING: Bapu crashed! Dandi March has paused for tea!",
+      "📰 NEWS: Ahinsa shield broken! British Empire celebrates a temporary setback!",
+      "📰 HEADLINE: Bapu says: 'An eye for an eye makes the whole world blind... and hit a wall!'"
+    ]
+  };
+
+  const characterStories = politicalStories[equippedSkin];
+  if (characterStories) {
+    DOM.goFunnyMsg.textContent = characterStories[Math.floor(Math.random() * characterStories.length)];
+  } else {
+    DOM.goFunnyMsg.textContent = WRONG_MSGS[Math.floor(Math.random() * WRONG_MSGS.length)];
+  }
   
   DOM.gameOverScreen.classList.add('show');
 }
@@ -1754,7 +1845,7 @@ function equipSkin(skinId) {
   equippedSkin = skinId;
   localStorage.setItem('equippedSkin', equippedSkin);
   applySkin(skinId);
-  renderShopList();
+  renderShopContent();
   AudioManager.playSwipe();
 }
 
@@ -1787,6 +1878,12 @@ function applySkin(skinId) {
     const badgeText = characterSvg.querySelector('text');
     if (badgeText) {
       badgeText.textContent = skin.colors.badge;
+    }
+    
+    // Toggle details classes
+    characterSvg.className = '';
+    if (skinId === 'modi' || skinId === 'rahul' || skinId === 'meloni' || skinId === 'salman' || skinId === 'gandhi') {
+      characterSvg.classList.add('char-' + skinId);
     }
   }
 }
