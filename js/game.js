@@ -378,10 +378,6 @@ function moveCharacter(dir) {
   if (State.targetLane !== prev) {
     AudioManager.playSwipe();
     Renderer2D.triggerShake(3.5);
-    // Tilt the character (we handle this in 3D now, but can keep class for extra juice if needed)
-    DOM.character.classList.remove('tilt-left', 'tilt-right');
-    void DOM.character.offsetWidth; // reflow
-    DOM.character.classList.add(dir === 'left' ? 'tilt-left' : 'tilt-right');
   }
 }
 
@@ -878,6 +874,10 @@ function setupInput() {
   
   window.addEventListener('touchmove', e => {
     if (State.phase !== 'playing') return;
+    
+    // Prevent default browser scrolling/rubber-banding to make swipes lag-free!
+    if (e.cancelable) e.preventDefault();
+    
     let touchCurrentX = e.changedTouches[0].screenX;
     let touchCurrentY = e.changedTouches[0].screenY;
     
@@ -907,7 +907,7 @@ function setupInput() {
         }
       }
     }
-  }, { passive: true });
+  }, { passive: false });
 
   // Menu Buttons
   DOM.btnStart.addEventListener('click', () => {

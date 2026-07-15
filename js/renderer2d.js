@@ -48,8 +48,12 @@ const Renderer2D = {
     onWindowResize() {
         const container = document.getElementById('game-container');
         if (container) {
-            this.canvas.width = container.clientWidth;
-            this.canvas.height = container.clientHeight;
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            if (this.canvas.width !== w || this.canvas.height !== h) {
+                this.canvas.width = w;
+                this.canvas.height = h;
+            }
         }
     },
 
