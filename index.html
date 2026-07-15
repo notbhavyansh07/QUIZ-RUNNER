@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -332,9 +332,10 @@
     </div>
 
     <!-- Shop Tabs Navigation -->
-    <div id="shop-tabs" style="display: flex; gap: 8px; width: 100%; margin-bottom: 8px;">
-      <button class="shop-tab active" id="tab-skins" data-tab="skins" style="flex: 1; padding: 8px 12px; font-weight: 800; border-radius: 12px; border: 2px solid #fbbf24; background: rgba(251, 191, 36, 0.2); color: #fff; cursor: pointer; font-family: var(--font); font-size: 0.85rem;">👤 Skins</button>
-      <button class="shop-tab" id="tab-upgrades" data-tab="upgrades" style="flex: 1; padding: 8px 12px; font-weight: 800; border-radius: 12px; border: 2px solid #94a3b8; background: rgba(255,255,255,0.05); color: #cbd5e1; cursor: pointer; font-family: var(--font); font-size: 0.85rem;">⚡ Gear & Upgrades</button>
+    <div id="shop-tabs" style="display:flex;gap:6px;width:100%;margin-bottom:8px;">
+      <button class="shop-tab active" id="tab-skins" data-tab="skins" style="flex:1;padding:7px 4px;font-weight:800;border-radius:12px;border:2px solid #fbbf24;background:rgba(251,191,36,0.2);color:#fff;cursor:pointer;font-family:var(--font);font-size:0.72rem;">&#x1F464; Skins</button>
+      <button class="shop-tab" id="tab-upgrades" data-tab="upgrades" style="flex:1;padding:7px 4px;font-weight:800;border-radius:12px;border:2px solid #94a3b8;background:rgba(255,255,255,0.05);color:#cbd5e1;cursor:pointer;font-family:var(--font);font-size:0.72rem;">&#9889; Gear</button>
+      <button class="shop-tab" id="tab-mememod" data-tab="mememod" style="flex:1;padding:7px 4px;font-weight:800;border-radius:12px;border:2px solid #f43f5e;background:rgba(244,63,94,0.1);color:#fda4af;cursor:pointer;font-family:var(--font);font-size:0.72rem;">&#x1F3AD; Meme</button>
     </div>
 
     <!-- Scrollable Skins List Container -->
@@ -437,6 +438,38 @@
     <button class="btn-secondary" id="btn-menu">🏠 Main Menu</button>
 
   </div><!-- /gameover-screen -->
+
+  <!-- ════════════════════════════════════════════════════════
+       MEME CUTSCENE OVERLAY  (shown on meme char crash)
+  ════════════════════════════════════════════════════════ -->
+  <div id="meme-cutscene" style="display:none;">
+    <div class="mcs-backdrop"></div>
+    <div class="mcs-stage">
+      <!-- Ticker tape / news banner at top -->
+      <div class="mcs-ticker"><span id="mcs-ticker-text">📰 BREAKING NEWS... 📰 BREAKING NEWS...</span></div>
+
+      <!-- Character avatars -->
+      <div class="mcs-chars">
+        <div class="mcs-char" id="mcs-char-left">
+          <svg id="mcs-svg-left" viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg" width="90" height="110"></svg>
+          <div class="mcs-name" id="mcs-name-left">Modi Ji</div>
+        </div>
+        <div class="mcs-vs">⚔️</div>
+        <div class="mcs-char" id="mcs-char-right">
+          <svg id="mcs-svg-right" viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg" width="90" height="110"></svg>
+          <div class="mcs-name" id="mcs-name-right">Rival</div>
+        </div>
+      </div>
+
+      <!-- Meme speech bubble -->
+      <div class="mcs-bubble" id="mcs-bubble">
+        <div class="mcs-bubble-text" id="mcs-bubble-text">Loading meme...</div>
+      </div>
+
+      <!-- Skip button -->
+      <button class="mcs-skip" id="mcs-skip">Skip ▶▶</button>
+    </div>
+  </div>
 
 </div><!-- /game-container -->
 

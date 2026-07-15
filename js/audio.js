@@ -369,5 +369,37 @@ const AudioManager = (() => {
     }
   }
 
-  return { init, playSwipe, playCorrect, playWrong, playCoin, playLevelUp, playCountdown, startBeat, stopBeat, playStartWhistle, playMemeLine };
+  function playMemeJingle() {
+    // Whimsical boing-whistle melody for the cutscene
+    if (!ctx || window.AudioManagerMuted) return;
+    try {
+      if (ctx.state === 'suspended') ctx.resume();
+      const melody = [
+        { f: 523, t: 0.0, d: 0.15 }, // C5
+        { f: 659, t: 0.15, d: 0.15 }, // E5
+        { f: 784, t: 0.3, d: 0.15 },  // G5
+        { f: 1046, t: 0.45, d: 0.25 }, // C6
+        { f: 880, t: 0.7, d: 0.12 },  // A5
+        { f: 1046, t: 0.82, d: 0.12 }, // C6
+        { f: 1175, t: 0.94, d: 0.3 }, // D6
+        { f: 987, t: 1.24, d: 0.4 },  // B5 fade
+      ];
+      melody.forEach(({ f, t, d }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f * 0.6, ctx.currentTime + t);
+        osc.frequency.exponentialRampToValueAtTime(f, ctx.currentTime + t + 0.04);
+        gain.gain.setValueAtTime(0, ctx.currentTime + t);
+        gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + t + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + d);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + t);
+        osc.stop(ctx.currentTime + t + d + 0.01);
+      });
+    } catch(e) {}
+  }
+
+  return { init, playSwipe, playCorrect, playWrong, playCoin, playLevelUp, playCountdown, startBeat, stopBeat, playStartWhistle, playMemeLine, playMemeJingle };
 })();

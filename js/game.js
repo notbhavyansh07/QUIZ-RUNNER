@@ -899,8 +899,15 @@ function showGameOver() {
   } else {
     DOM.goFunnyMsg.textContent = WRONG_MSGS[Math.floor(Math.random() * WRONG_MSGS.length)];
   }
-  
-  DOM.gameOverScreen.classList.add('show');
+  // Show meme cutscene for political characters, then reveal game over
+  const MEME_SKIN_IDS = ['modi', 'rahul', 'meloni', 'salman', 'gandhi'];
+  if (MEME_SKIN_IDS.includes(equippedSkin)) {
+    showMemeCutscene(equippedSkin, () => {
+      DOM.gameOverScreen.classList.add('show');
+    });
+  } else {
+    DOM.gameOverScreen.classList.add('show');
+  }
 }
 
 function jumpCharacter() {
@@ -1187,39 +1194,459 @@ function renderShopContent() {
   // Highlight active tab styles
   const tabSkins = document.getElementById('tab-skins');
   const tabUpgrades = document.getElementById('tab-upgrades');
-  if (tabSkins && tabUpgrades) {
-    if (currentShopTab === 'skins') {
-      tabSkins.classList.add('active');
-      tabUpgrades.classList.remove('active');
-      tabSkins.style.borderColor = '#fbbf24';
-      tabSkins.style.background = 'rgba(251,191,36,0.2)';
-      tabSkins.style.color = '#fff';
-      tabSkins.style.boxShadow = '0 0 10px rgba(251,191,36,0.4)';
-      
-      tabUpgrades.style.borderColor = '#94a3b8';
-      tabUpgrades.style.background = 'rgba(255,255,255,0.05)';
-      tabUpgrades.style.color = '#cbd5e1';
-      tabUpgrades.style.boxShadow = 'none';
-    } else {
-      tabUpgrades.classList.add('active');
-      tabSkins.classList.remove('active');
-      tabUpgrades.style.borderColor = '#fbbf24';
-      tabUpgrades.style.background = 'rgba(251,191,36,0.2)';
-      tabUpgrades.style.color = '#fff';
-      tabUpgrades.style.boxShadow = '0 0 10px rgba(251,191,36,0.4)';
-      
-      tabSkins.style.borderColor = '#94a3b8';
-      tabSkins.style.background = 'rgba(255,255,255,0.05)';
-      tabSkins.style.color = '#cbd5e1';
-      tabSkins.style.boxShadow = 'none';
-    }
+  const tabMememod = document.getElementById('tab-mememod');
+  const allTabs = [tabSkins, tabUpgrades, tabMememod].filter(Boolean);
+  allTabs.forEach(tab => {
+    if (!tab) return;
+    tab.style.borderColor = '#94a3b8';
+    tab.style.background = 'rgba(255,255,255,0.05)';
+    tab.style.color = '#cbd5e1';
+    tab.style.boxShadow = 'none';
+    tab.classList.remove('active');
+  });
+  const activeTab = document.getElementById(
+    currentShopTab === 'skins' ? 'tab-skins' :
+    currentShopTab === 'mememod' ? 'tab-mememod' : 'tab-upgrades'
+  );
+  if (activeTab) {
+    const isMemeMod = currentShopTab === 'mememod';
+    activeTab.classList.add('active');
+    activeTab.style.borderColor = isMemeMod ? '#f43f5e' : '#fbbf24';
+    activeTab.style.background = isMemeMod ? 'rgba(244,63,94,0.2)' : 'rgba(251,191,36,0.2)';
+    activeTab.style.color = '#fff';
+    activeTab.style.boxShadow = isMemeMod ? '0 0 10px rgba(244,63,94,0.4)' : '0 0 10px rgba(251,191,36,0.4)';
   }
 
   if (currentShopTab === 'skins') {
     renderSkinsTab();
+  } else if (currentShopTab === 'mememod') {
+    renderMemeModTab();
   } else {
     renderUpgradesTab();
   }
+}
+
+// ── Realistic SVG Portrait Builders ──────────────────────────
+const MEME_CHARS = {
+  modi: {
+    id: 'modi',
+    name: 'Modi Ji \uD83C\uDDEE\uD83C\uDDF3',
+    catchphrase: '"Mitron! Main aaya hoon!"',
+    cost: 50,
+    rival: 'rahul',
+    svgPortrait: (scale=1, flip=false) => {
+      const t = flip ? `transform="scale(-1,1) translate(-80,0)"` : '';
+      return `<g ${t}>
+        <!-- Bald head -->
+        <ellipse cx="40" cy="28" rx="22" ry="20" fill="#d4a574"/>
+        <!-- White thick beard -->
+        <path d="M 18 38 Q 40 62 62 38 Q 55 52 40 56 Q 25 52 18 38 Z" fill="#f8fafc"/>
+        <!-- Beard texture -->
+        <path d="M 22 40 Q 32 48 40 50 M 40 50 Q 48 48 58 40" stroke="#e2e8f0" stroke-width="1.5" fill="none"/>
+        <!-- Right eyebrow -->
+        <path d="M 28 22 Q 36 19 44 22" stroke="#6b4226" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <!-- Left eyebrow -->
+        <path d="M 44 22 Q 52 19 60 22" stroke="#6b4226" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <!-- Eyes -->
+        <ellipse cx="33" cy="28" rx="4.5" ry="4" fill="#fff"/>
+        <ellipse cx="47" cy="28" rx="4.5" ry="4" fill="#fff"/>
+        <circle cx="33" cy="28" r="2.5" fill="#4a2c17"/>
+        <circle cx="47" cy="28" r="2.5" fill="#4a2c17"/>
+        <!-- Smile -->
+        <path d="M 32 43 Q 40 49 48 43" stroke="#d4a574" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <!-- Round glasses -->
+        <circle cx="33" cy="28" r="5.5" stroke="#c0a060" stroke-width="1.8" fill="none"/>
+        <circle cx="47" cy="28" r="5.5" stroke="#c0a060" stroke-width="1.8" fill="none"/>
+        <line x1="38.5" y1="28" x2="41.5" y2="28" stroke="#c0a060" stroke-width="1.8"/>
+        <!-- Saffron Nehru jacket -->
+        <rect x="18" y="56" width="44" height="38" rx="6" fill="#f97316"/>
+        <!-- Jacket collar -->
+        <polygon points="40,56 34,70 40,68 46,70" fill="#fff"/>
+        <!-- Jacket buttons -->
+        <circle cx="40" cy="74" r="1.5" fill="rgba(0,0,0,0.3)"/>
+        <circle cx="40" cy="82" r="1.5" fill="rgba(0,0,0,0.3)"/>
+        <!-- Arms running -->
+        <rect x="4" y="62" width="14" height="7" rx="3.5" fill="#d4a574" transform="rotate(-30 11 65)"/>
+        <rect x="62" y="62" width="14" height="7" rx="3.5" fill="#d4a574" transform="rotate(30 69 65)"/>
+        <!-- White dhoti legs -->
+        <rect x="22" y="88" width="14" height="12" rx="4" fill="#fff"/>
+        <rect x="44" y="88" width="14" height="12" rx="4" fill="#fff"/>
+        <!-- Flag badge -->
+        <circle cx="40" cy="66" r="5" fill="rgba(255,255,255,0.2)"/>
+        <text x="40" y="69.5" text-anchor="middle" font-size="7" fill="#fff">\uD83C\uDDEE\uD83C\uDDF3</text>
+      </g>`;
+    }
+  },
+  rahul: {
+    id: 'rahul',
+    name: 'Rahul Ji \uD83C\uDF40',
+    catchphrase: '"Khatam! Bye bye! Tata!"',
+    cost: 50,
+    rival: 'modi',
+    svgPortrait: (scale=1, flip=false) => {
+      const t = flip ? `transform="scale(-1,1) translate(-80,0)"` : '';
+      return `<g ${t}>
+        <!-- Head with hair -->
+        <ellipse cx="40" cy="28" rx="21" ry="20" fill="#d4a574"/>
+        <!-- Flowing dark hair -->
+        <path d="M 18 22 Q 20 6 40 4 Q 60 6 62 22 Q 60 14 40 12 Q 20 14 18 22 Z" fill="#1a0a00"/>
+        <!-- Side hair -->
+        <path d="M 19 22 Q 16 30 18 38" stroke="#1a0a00" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M 61 22 Q 64 30 62 38" stroke="#1a0a00" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <!-- Light stubble -->
+        <path d="M 28 40 Q 40 44 52 40" stroke="rgba(0,0,0,0.25)" stroke-width="1" fill="none"/>
+        <!-- Eyebrows -->
+        <path d="M 28 22 Q 36 19 44 22" stroke="#4a2c17" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M 44 22 Q 52 19 60 22" stroke="#4a2c17" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <!-- Eyes -->
+        <ellipse cx="33" cy="28" rx="4" ry="4" fill="#fff"/>
+        <ellipse cx="47" cy="28" rx="4" ry="4" fill="#fff"/>
+        <circle cx="33" cy="28" r="2.2" fill="#1a0a00"/>
+        <circle cx="47" cy="28" r="2.2" fill="#1a0a00"/>
+        <!-- Friendly smile -->
+        <path d="M 32 40 Q 40 47 48 40" stroke="#a07050" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <!-- White kurta body -->
+        <rect x="18" y="56" width="44" height="38" rx="6" fill="#f8fafc"/>
+        <!-- Congress hand symbol -->
+        <path d="M 33 64 Q 33 74 40 75 Q 47 74 47 64" stroke="#22c55e" stroke-width="2" fill="none"/>
+        <!-- Arms -->
+        <rect x="4" y="62" width="14" height="7" rx="3.5" fill="#d4a574" transform="rotate(-25 11 65)"/>
+        <rect x="62" y="62" width="14" height="7" rx="3.5" fill="#d4a574" transform="rotate(25 69 65)"/>
+        <!-- Legs with green shoes -->
+        <rect x="22" y="88" width="14" height="10" rx="3" fill="#e2e8f0"/>
+        <rect x="44" y="88" width="14" height="10" rx="3" fill="#e2e8f0"/>
+        <rect x="20" y="95" width="16" height="5" rx="2.5" fill="#22c55e"/>
+        <rect x="44" y="95" width="16" height="5" rx="2.5" fill="#22c55e"/>
+      </g>`;
+    }
+  },
+  meloni: {
+    id: 'meloni',
+    name: 'Meloni \uD83C\uDDEE\uD83C\uDDF9',
+    catchphrase: '"Hello friends! Melodi!"',
+    cost: 50,
+    rival: 'modi',
+    svgPortrait: (scale=1, flip=false) => {
+      const t = flip ? `transform="scale(-1,1) translate(-80,0)"` : '';
+      return `<g ${t}>
+        <!-- Head -->
+        <ellipse cx="40" cy="28" rx="20" ry="19" fill="#f0c9a0"/>
+        <!-- Blonde bob hair -->
+        <path d="M 20 20 Q 18 4 40 2 Q 62 4 60 20 L 62 40 Q 52 46 40 46 Q 28 46 18 40 Z" fill="#fef08a"/>
+        <!-- Hair shade -->
+        <path d="M 20 20 Q 22 38 25 42" stroke="#fbbf24" stroke-width="2" fill="none"/>
+        <path d="M 60 20 Q 58 38 55 42" stroke="#fbbf24" stroke-width="2" fill="none"/>
+        <!-- Strong jawline -->
+        <path d="M 22 38 Q 40 48 58 38" stroke="#e8b080" stroke-width="1.5" fill="none"/>
+        <!-- Eyebrows -->
+        <path d="M 28 21 Q 35 18 41 21" stroke="#a0600a" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 43 21 Q 50 18 57 21" stroke="#a0600a" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <!-- Eyes with liner -->
+        <ellipse cx="34" cy="28" rx="5" ry="4.5" fill="#fff"/>
+        <ellipse cx="48" cy="28" rx="5" ry="4.5" fill="#fff"/>
+        <circle cx="34" cy="28" r="2.8" fill="#2563eb"/>
+        <circle cx="48" cy="28" r="2.8" fill="#2563eb"/>
+        <!-- Confident smile -->
+        <path d="M 32 39 Q 40 44 48 39" stroke="#c07a6a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <!-- Cyan blazer -->
+        <rect x="18" y="56" width="44" height="38" rx="6" fill="#0891b2"/>
+        <!-- Collar V -->
+        <polygon points="40,56 34,72 40,70 46,72" fill="#fff"/>
+        <!-- Italian flag badge -->
+        <rect x="50" y="60" width="10" height="6" rx="1" fill="#009246"/>
+        <rect x="54" y="60" width="3" height="6" fill="#fff"/>
+        <rect x="57" y="60" width="3" height="6" rx="1" fill="#ce2b37"/>
+        <!-- Arms -->
+        <rect x="5" y="62" width="13" height="6" rx="3" fill="#f0c9a0" transform="rotate(-20 11 65)"/>
+        <rect x="63" y="62" width="13" height="6" rx="3" fill="#f0c9a0" transform="rotate(20 70 65)"/>
+        <!-- Legs -->
+        <rect x="22" y="88" width="14" height="10" rx="3" fill="#1e40af"/>
+        <rect x="44" y="88" width="14" height="10" rx="3" fill="#1e40af"/>
+        <rect x="20" y="95" width="16" height="5" rx="2.5" fill="#f8fafc"/>
+        <rect x="44" y="95" width="16" height="5" rx="2.5" fill="#f8fafc"/>
+      </g>`;
+    }
+  },
+  salman: {
+    id: 'salman',
+    name: 'Salman Bhai \uD83D\uDD76\uFE0F',
+    catchphrase: '"Footpath se door raho!"',
+    cost: 50,
+    rival: 'modi',
+    svgPortrait: (scale=1, flip=false) => {
+      const t = flip ? `transform="scale(-1,1) translate(-80,0)"` : '';
+      return `<g ${t}>
+        <!-- Shaved/bald head with strong jaw -->
+        <ellipse cx="40" cy="26" rx="23" ry="21" fill="#c8956a"/>
+        <!-- 5 o'clock shadow -->
+        <path d="M 18 32 Q 40 54 62 32 Q 58 46 40 50 Q 22 46 18 32 Z" fill="rgba(0,0,0,0.18)"/>
+        <!-- Thick neck -->
+        <rect x="30" y="44" width="20" height="14" rx="5" fill="#c8956a"/>
+        <!-- Eyebrows -->
+        <path d="M 24 20 Q 33 17 40 20" stroke="#2d1a00" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M 40 20 Q 47 17 56 20" stroke="#2d1a00" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <!-- Dark aviator sunglasses -->
+        <rect x="19" y="22" width="18" height="11" rx="4" fill="#111827"/>
+        <rect x="43" y="22" width="18" height="11" rx="4" fill="#111827"/>
+        <line x1="37" y1="26" x2="43" y2="26" stroke="#374151" stroke-width="2"/>
+        <line x1="12" y1="26" x2="19" y2="26" stroke="#6b7280" stroke-width="1.5"/>
+        <line x1="61" y1="26" x2="68" y2="26" stroke="#6b7280" stroke-width="1.5"/>
+        <!-- Lens shine -->
+        <rect x="21" y="24" width="5" height="3" rx="1.5" fill="rgba(255,255,255,0.2)"/>
+        <rect x="45" y="24" width="5" height="3" rx="1.5" fill="rgba(255,255,255,0.2)"/>
+        <!-- Smirk -->
+        <path d="M 34 41 Q 42 46 50 41" stroke="#a0600a" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <!-- Denim jacket -->
+        <rect x="16" y="56" width="48" height="38" rx="6" fill="#1d4ed8"/>
+        <!-- Denim texture lines -->
+        <line x1="18" y1="65" x2="62" y2="65" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <line x1="18" y1="72" x2="62" y2="72" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <!-- Tiger logo -->
+        <text x="40" y="78" text-anchor="middle" font-size="14">\uD83D\uDC2F</text>
+        <!-- Arms -->
+        <rect x="3" y="60" width="14" height="8" rx="4" fill="#1d4ed8" transform="rotate(-15 10 64)"/>
+        <rect x="63" y="60" width="14" height="8" rx="4" fill="#1d4ed8" transform="rotate(15 70 64)"/>
+        <!-- Legs -->
+        <rect x="22" y="88" width="15" height="10" rx="3" fill="#1e3a8a"/>
+        <rect x="43" y="88" width="15" height="10" rx="3" fill="#1e3a8a"/>
+        <rect x="20" y="95" width="17" height="5" rx="2.5" fill="#3b82f6"/>
+        <rect x="43" y="95" width="17" height="5" rx="2.5" fill="#3b82f6"/>
+      </g>`;
+    }
+  },
+  gandhi: {
+    id: 'gandhi',
+    name: 'Mahatma Gandhi \uD83D\uDD4A\uFE0F',
+    catchphrase: '"Ahinsa param dharmo!"',
+    cost: 50,
+    rival: 'salman',
+    svgPortrait: (scale=1, flip=false) => {
+      const t = flip ? `transform="scale(-1,1) translate(-80,0)"` : '';
+      return `<g ${t}>
+        <!-- Bald head -->
+        <ellipse cx="40" cy="25" rx="18" ry="18" fill="#d4a574"/>
+        <!-- Thin frail build hint -->
+        <ellipse cx="40" cy="25" rx="16" ry="16" fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="2"/>
+        <!-- Ears -->
+        <ellipse cx="22" cy="26" rx="3.5" ry="5" fill="#c99060"/>
+        <ellipse cx="58" cy="26" rx="3.5" ry="5" fill="#c99060"/>
+        <!-- Round wire spectacles on nose tip -->
+        <circle cx="33" cy="31" r="5.5" stroke="#c0a060" stroke-width="1.5" fill="rgba(200,240,255,0.2)"/>
+        <circle cx="47" cy="31" r="5.5" stroke="#c0a060" stroke-width="1.5" fill="rgba(200,240,255,0.2)"/>
+        <line x1="38.5" y1="31" x2="41.5" y2="31" stroke="#c0a060" stroke-width="1.5"/>
+        <line x1="15" y1="30" x2="27.5" y2="30" stroke="#c0a060" stroke-width="1"/>
+        <line x1="52.5" y1="30" x2="65" y2="30" stroke="#c0a060" stroke-width="1"/>
+        <!-- Old man kind eyes -->
+        <circle cx="33" cy="31" r="2.5" fill="#3d2010"/>
+        <circle cx="47" cy="31" r="2.5" fill="#3d2010"/>
+        <!-- Warm smile -->
+        <path d="M 30 40 Q 40 47 50 40" stroke="#a07050" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <!-- White dhoti shawl -->
+        <path d="M 18 56 Q 14 72 18 94 L 62 94 Q 66 72 62 56 Z" fill="#f8fafc"/>
+        <!-- Shawl diagonal drape -->
+        <path d="M 18 56 L 62 80" stroke="#e2e8f0" stroke-width="3" fill="none"/>
+        <!-- Thin arms -->
+        <rect x="6" y="62" width="12" height="5" rx="2.5" fill="#d4a574" transform="rotate(-25 12 64)"/>
+        <rect x="62" y="62" width="12" height="5" rx="2.5" fill="#d4a574" transform="rotate(25 68 64)"/>
+        <!-- Legs -->
+        <rect x="24" y="88" width="13" height="6" rx="3" fill="#f8fafc"/>
+        <rect x="43" y="88" width="13" height="6" rx="3" fill="#f8fafc"/>
+        <!-- Walking stick -->
+        <line x1="62" y1="58" x2="70" y2="100" stroke="#92400e" stroke-width="3" stroke-linecap="round"/>
+        <ellipse cx="62" cy="58" rx="3" ry="2" fill="#92400e"/>
+      </g>`;
+    }
+  }
+};
+
+function buildMemeCharSVG(charId, flip = false) {
+  const ch = MEME_CHARS[charId];
+  if (!ch) return '';
+  return `<svg viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg">${ch.svgPortrait(1, flip)}</svg>`;
+}
+
+function renderMemeModTab() {
+  DOM.shopSkinsList.innerHTML = '';
+  
+  // Header banner
+  const banner = document.createElement('div');
+  banner.style.cssText = 'text-align:center;padding:8px 0;font-size:0.9rem;font-weight:900;color:#f43f5e;text-transform:uppercase;letter-spacing:0.1em;text-shadow:0 0 12px rgba(244,63,94,0.5);margin-bottom:4px;';
+  banner.textContent = '\uD83C\uDFAD Political Meme Characters';
+  DOM.shopSkinsList.appendChild(banner);
+
+  const grid = document.createElement('div');
+  grid.className = 'meme-mod-grid';
+
+  Object.values(MEME_CHARS).forEach(ch => {
+    const isUnlocked = unlockedSkins.includes(ch.id);
+    const isEquipped = equippedSkin === ch.id;
+
+    const card = document.createElement('div');
+    card.className = 'meme-char-card' + (isEquipped ? ' equipped-meme' : '');
+
+    let btnHtml = '';
+    if (isEquipped) {
+      btnHtml = `<button class="mc-btn equipped-btn" disabled>\u2713 Equipped</button>`;
+    } else if (isUnlocked) {
+      btnHtml = `<button class="mc-btn equip" onclick="equipSkin('${ch.id}')">Equip</button>`;
+    } else {
+      btnHtml = `<button class="mc-btn buy" onclick="buySkin('${ch.id}')">\uD83E\uDE99 ${ch.cost}</button>`;
+    }
+
+    if (isEquipped) {
+      card.innerHTML += `<div class="mc-equipped-badge">ON</div>`;
+    }
+
+    card.innerHTML += `
+      ${buildMemeCharSVG(ch.id)}
+      <div class="mc-name">${ch.name}</div>
+      <div class="mc-catchphrase">${ch.catchphrase}</div>
+      ${btnHtml}
+    `;
+    grid.appendChild(card);
+  });
+
+  DOM.shopSkinsList.appendChild(grid);
+  DOM.shopBalance.textContent = totalCoins;
+}
+
+// ── Meme Cutscene Engine ───────────────────────────────────────
+const CUTSCENE_DATA = {
+  modi: {
+    leftChar: 'modi', leftName: 'Modi Ji',
+    rightChar: 'rahul', rightName: 'Rahul Ji',
+    ticker: '\uD83D\uDCF0 BREAKING: Modi Ji hits a barrier! Rahul Ji rushes to spot! | Parliament Emergency Called! | Amit Shah says: Situation Under Control! | \uD83D\uDCF0',
+    dialogue: [
+      { who: 'left',  text: 'Mitron... main gir gaya. \uD83D\uDE14' },
+      { who: 'right', text: 'KHATAM! BYE BYE! TATA! Aab main PM banunga! \uD83D\uDC83' },
+      { who: 'left',  text: 'Yeh toh injustice hai Mitron... \uD83D\uDE24' },
+      { who: 'right', text: 'Congress waale bolenge... Jai Ho! \uD83C\uDF40' },
+      { who: 'left',  text: '56 inch ka seena! Phir uthenge! \uD83D\uDCAA' }
+    ]
+  },
+  rahul: {
+    leftChar: 'rahul', leftName: 'Rahul Ji',
+    rightChar: 'modi', rightName: 'Modi Ji',
+    ticker: '\uD83D\uDCF0 BREAKING: Rahul Ji trips! Sona nikalne ki machine halts! | Congress calls emergency press conf! | \uD83D\uDCF0',
+    dialogue: [
+      { who: 'left',  text: 'Aloo ki tarah main bhi gir gaya... \uD83E\uDD14' },
+      { who: 'right', text: 'Mitron! Yahi hota hai jab Congress chalti hai! \uD83D\uDC4D' },
+      { who: 'left',  text: 'KHATAM! BYE BYE! TATA! GOODBYE! \uD83D\uDC4B' },
+      { who: 'right', text: 'Abki baar... Modi Sarkar! \uD83E\uDEE1' },
+      { who: 'left',  text: 'Main kal wapas aaunga. Pappu promise! \uD83D\uDE02' }
+    ]
+  },
+  meloni: {
+    leftChar: 'meloni', leftName: 'Meloni',
+    rightChar: 'modi', rightName: 'Modi Ji',
+    ticker: '\uD83D\uDCF0 BREAKING: Meloni crashes! G7 meeting postponed! | Melodi vibes gone wrong! | \uD83D\uDCF0',
+    dialogue: [
+      { who: 'left',  text: 'Hello friends... I crashed! \uD83D\uDE48' },
+      { who: 'right', text: 'Melodi Ji! Main helicopter bhejta hoon! \uD83D\uDE81' },
+      { who: 'left',  text: 'No melodi today! The barrier won! \uD83D\uDE24' },
+      { who: 'right', text: 'Italy-India friendship is forever! \uD83E\uDD1D' },
+      { who: 'left',  text: 'Next time... Melodi will WIN! \uD83D\uDCAA\uD83C\uDDEE\uD83C\uDDF9' }
+    ]
+  },
+  salman: {
+    leftChar: 'salman', leftName: 'Salman Bhai',
+    rightChar: 'modi', rightName: 'Modi Ji',
+    ticker: '\uD83D\uDCF0 BREAKING: Salman Khan hoverboard crash! Driver says he was sleeping! | Blackbuck escaped! | \uD83D\uDCF0',
+    dialogue: [
+      { who: 'left',  text: 'Bhai was NOT driving! Hoverboard mein driver tha! \uD83D\uDE21' },
+      { who: 'right', text: 'Ek baar maafi maang lo Bhai... \uD83D\uDE05' },
+      { who: 'left',  text: 'Bhai rocks and barrier... also rocks. \uD83D\uDC94' },
+      { who: 'right', text: 'Dabangg ho ke uthna padega! \uD83D\uDCAA' },
+      { who: 'left',  text: 'Being Human... sometimes means falling! \uD83D\uDE4F' }
+    ]
+  },
+  gandhi: {
+    leftChar: 'gandhi', leftName: 'Bapu',
+    rightChar: 'rahul', rightName: 'Rahul Ji',
+    ticker: '\uD83D\uDCF0 BREAKING: Mahatma Gandhi crashes! Dandi March halts for tea! | British Empire celebrates temporarily! | Ahinsa shield broken! | \uD83D\uDCF0',
+    dialogue: [
+      { who: 'left',  text: 'Hey Ram... even Bapu falls. \uD83D\uDE4F' },
+      { who: 'right', text: 'Bapu ji! Congress will carry your legacy! \uD83C\uDF40' },
+      { who: 'left',  text: 'An eye for an eye... makes everyone trip! \uD83D\uDE02' },
+      { who: 'right', text: 'Main laaon danda? \uD83E\uDE77' },
+      { who: 'left',  text: 'Ahinsa se chalte raho, Bapu uthenge. \uD83D\uDD4A\uFE0F' }
+    ]
+  }
+};
+
+function showMemeCutscene(skinId, onDone) {
+  const data = CUTSCENE_DATA[skinId];
+  if (!data) { onDone(); return; }
+
+  const overlay = document.getElementById('meme-cutscene');
+  const tickerText = document.getElementById('mcs-ticker-text');
+  const svgLeft = document.getElementById('mcs-svg-left');
+  const svgRight = document.getElementById('mcs-svg-right');
+  const nameLeft = document.getElementById('mcs-name-left');
+  const nameRight = document.getElementById('mcs-name-right');
+  const bubble = document.getElementById('mcs-bubble');
+  const bubbleText = document.getElementById('mcs-bubble-text');
+  const skipBtn = document.getElementById('mcs-skip');
+
+  if (!overlay) { onDone(); return; }
+
+  // Build SVG portraits
+  const leftPortrait = MEME_CHARS[data.leftChar];
+  const rightPortrait = MEME_CHARS[data.rightChar];
+  svgLeft.innerHTML = leftPortrait ? leftPortrait.svgPortrait(1, false) : '';
+  svgRight.innerHTML = rightPortrait ? rightPortrait.svgPortrait(1, true) : '';
+  nameLeft.textContent = data.leftName;
+  nameRight.textContent = data.rightName;
+  tickerText.textContent = data.ticker;
+
+  overlay.style.display = 'block';
+
+  // Speak the dialogue with voice
+  let dialogueIdx = 0;
+  let finished = false;
+
+  function finish() {
+    if (finished) return;
+    finished = true;
+    overlay.style.display = 'none';
+    skipBtn.removeEventListener('click', finish);
+    onDone();
+  }
+
+  skipBtn.addEventListener('click', finish, { once: true });
+
+  function nextDialogue() {
+    if (finished) return;
+    if (dialogueIdx >= data.dialogue.length) {
+      setTimeout(finish, 600);
+      return;
+    }
+    const line = data.dialogue[dialogueIdx++];
+    
+    // Highlight active speaker
+    const leftEl = document.getElementById('mcs-char-left');
+    const rightEl = document.getElementById('mcs-char-right');
+    if (leftEl && rightEl) {
+      leftEl.style.opacity = line.who === 'left' ? '1' : '0.5';
+      rightEl.style.opacity = line.who === 'right' ? '1' : '0.5';
+    }
+    
+    // Update speech bubble
+    bubble.style.animation = 'none';
+    void bubble.offsetWidth; // trigger reflow for re-animation
+    bubble.style.animation = 'mcsBubblePop 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards';
+    bubbleText.textContent = line.text;
+    
+    // Speak it
+    AudioManager.playMemeLine(skinId, dialogueIdx === 1 ? 'start' : (line.who === 'left' ? 'wrong' : 'correct'));
+    
+    const delay = 1600 + line.text.length * 40;
+    setTimeout(nextDialogue, Math.min(delay, 3200));
+  }
+  
+  // Play cutscene jingle
+  AudioManager.playMemeJingle();
+  setTimeout(nextDialogue, 500);
 }
 
 function renderSkinsTab() {
@@ -1908,6 +2335,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const tabSkins = document.getElementById('tab-skins');
   const tabUpgrades = document.getElementById('tab-upgrades');
+  const tabMememod = document.getElementById('tab-mememod');
   if (tabSkins && tabUpgrades) {
     tabSkins.addEventListener('click', () => {
       currentShopTab = 'skins';
@@ -1919,6 +2347,13 @@ document.addEventListener('DOMContentLoaded', () => {
       renderShopContent();
       AudioManager.playSwipe();
     });
+    if (tabMememod) {
+      tabMememod.addEventListener('click', () => {
+        currentShopTab = 'mememod';
+        renderShopContent();
+        AudioManager.playSwipe();
+      });
+    }
   }
   
   // AI Scanner Bindings
