@@ -110,6 +110,7 @@ const State = {
   usedQuestions: new Set(),
   shuffledOptions: [],   // [{text, isCorrect, originalIndex}]
   correctLane: 0,
+  playCustomOnly: false,
 
   speed: SPEED_LEVELS[0].speed,
   levelIndex: 0,
@@ -266,7 +267,7 @@ function pickQuestion() {
     let activePool = QUESTIONS;
     let targetDifficulty = 'easy';
 
-    if (customQuestions.length > 0) {
+    if (State.playCustomOnly && customQuestions.length > 0) {
       activePool = customQuestions;
     } else {
       const currentLevel = State.levelData.level;
@@ -890,6 +891,7 @@ function setupInput() {
 
   // Menu Buttons
   DOM.btnStart.addEventListener('click', () => {
+    State.playCustomOnly = false;
     DOM.menuScreen.classList.remove('show');
     startCountdown();
   });
@@ -1659,7 +1661,7 @@ Note: each question must have exactly 3 choices, where exactly one choice has is
       optsDiv.appendChild(qBlock);
     });
 
-    addBtn.textContent = `Add all ${parsed.length} Questions`;
+    addBtn.textContent = `🎮 Play Worksheet (${parsed.length} Qs)`;
     statusDiv.style.display = 'none';
     previewDiv.style.display = 'block';
     addBtn.style.display = 'block';
@@ -1674,12 +1676,20 @@ Note: each question must have exactly 3 choices, where exactly one choice has is
 
 function addScannedQuestion() {
   if (!scannedQuestionTemp || scannedQuestionTemp.length === 0) return;
-  customQuestions = [...customQuestions, ...scannedQuestionTemp];
+  
+  // Overwrite customQuestions with the newly scanned worksheet questions
+  customQuestions = [...scannedQuestionTemp];
   localStorage.setItem('customQuestions', JSON.stringify(customQuestions));
   scannedQuestionTemp = null;
   
-  closeAIScanner();
-  showFeedback("✨ Scanned worksheet added to game pool! 🎮", "correct");
+  // Flag to play only custom questions
+  State.playCustomOnly = true;
+  
+  // Hide AI scanner screen
+  DOM.aiScreen.style.display = 'none';
+  
+  // Start the game immediately!
+  startCountdown();
 }
 
 function applyBoard(boardId) {
