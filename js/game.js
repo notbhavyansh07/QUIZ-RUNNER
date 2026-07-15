@@ -1277,6 +1277,9 @@ function openAIScanner() {
   document.getElementById('ai-file-input').value = '';
   document.getElementById('ai-file-name').textContent = 'No file selected';
   
+  const thumbnailImg = document.getElementById('ai-img-thumbnail');
+  if (thumbnailImg) thumbnailImg.style.display = 'none';
+  
   AudioManager.playSwipe();
 }
 
@@ -1284,6 +1287,54 @@ function closeAIScanner() {
   DOM.aiScreen.style.display = 'none';
   DOM.menuScreen.classList.add('show');
   AudioManager.playSwipe();
+}
+
+function compressImageFile(file, maxDim = 1000, quality = 0.75) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            resolve(compressedFile);
+          } else {
+            resolve(file);
+          }
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = () => resolve(file);
+    };
+    reader.onerror = () => resolve(file);
+  });
 }
 
 function fileToBase64(file) {
@@ -1396,12 +1447,15 @@ async function handleAIScan() {
   const addBtn = document.getElementById('btn-ai-add');
 
   statusDiv.style.display = 'block';
-  statusText.textContent = "Converting image...";
+  statusText.textContent = "⚡ Optimizing image size (compressing)...";
   previewDiv.style.display = 'none';
   addBtn.style.display = 'none';
 
   try {
-    const base64Data = await fileToBase64(file);
+    const compressedFile = await compressImageFile(file, 1000, 0.75);
+    
+    statusText.textContent = "Converting image parameters...";
+    const base64Data = await fileToBase64(compressedFile);
     let textResponse = "";
 
     const prompt = `Analyze this image containing multiple questions and options. Extract ALL questions, their correct answers, and incorrect options. Return ONLY a valid JSON object matching the following structure exactly, containing a list of questions, without markdown wrapping or comments:
@@ -1422,10 +1476,10 @@ async function handleAIScan() {
 Note: each question must have exactly 3 choices, where exactly one choice has isCorrect = true. 'difficulty' must be one of 'easy', 'medium', or 'hard'. If a question has 4 options in the image, select 3 of them including the correct one, and discard the 4th.`;
 
     if (isOpenRouter) {
-      statusText.textContent = "Extracting text from image locally (OCR)...";
+      statusText.textContent = "🔍 Local OCR: Extracting worksheet text...";
       let extractedText = "";
       try {
-        const result = await Tesseract.recognize(file, 'eng');
+        const result = await Tesseract.recognize(compressedFile, 'eng');
         extractedText = result.data.text;
         console.log("Extracted OCR text:", extractedText);
         if (!extractedText || !extractedText.trim()) {
@@ -1435,7 +1489,7 @@ Note: each question must have exactly 3 choices, where exactly one choice has is
         throw new Error("OCR parsing failed: " + ocrErr.message);
       }
 
-      statusText.textContent = "Uploading text to Tencent Hy3...";
+      statusText.textContent = "🤖 Tencent AI: Solving math questions...";
       
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: 'POST',
@@ -1488,7 +1542,7 @@ Note: each question must have exactly 3 choices, where exactly one choice has is
 
     } else {
       // Direct Gemini endpoint
-      statusText.textContent = "Uploading image to Gemini AI...";
+      statusText.textContent = "🤖 Gemini AI: Solving math questions...";
       
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
         method: 'POST',
@@ -1501,7 +1555,7 @@ Note: each question must have exactly 3 choices, where exactly one choice has is
               { text: prompt },
               {
                 inlineData: {
-                  mimeType: file.type,
+                  mimeType: compressedFile.type,
                   data: base64Data
                 }
               }
@@ -1709,10 +1763,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (aiFileInput) {
     aiFileInput.addEventListener('change', () => {
       const fileNameSpan = document.getElementById('ai-file-name');
-      if (fileNameSpan && aiFileInput.files.length > 0) {
-        fileNameSpan.textContent = aiFileInput.files[0].name;
-      } else if (fileNameSpan) {
-        fileNameSpan.textContent = "No file selected";
+      const thumbnailImg = document.getElementById('ai-img-thumbnail');
+      if (aiFileInput.files.length > 0) {
+        const file = aiFileInput.files[0];
+        if (fileNameSpan) fileNameSpan.textContent = file.name;
+        if (thumbnailImg) {
+          thumbnailImg.src = URL.createObjectURL(file);
+          thumbnailImg.style.display = 'block';
+        }
+      } else {
+        if (fileNameSpan) fileNameSpan.textContent = "No file selected";
+        if (thumbnailImg) thumbnailImg.style.display = 'none';
       }
     });
   }

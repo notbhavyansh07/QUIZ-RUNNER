@@ -1,4 +1,4 @@
-const CACHE_NAME = 'quizrunner-v8';
+const CACHE_NAME = 'quizrunner-v9';
 const ASSETS = [
   './',
   './index.html',
