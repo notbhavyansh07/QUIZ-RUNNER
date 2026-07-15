@@ -1392,8 +1392,7 @@ Analyze this text. Find the question and options (or solve the math problem if o
   "category": "Math"
 }`
             }
-          ],
-          response_format: { type: "json_object" }
+          ]
         })
       });
 
