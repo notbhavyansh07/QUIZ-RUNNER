@@ -327,10 +327,7 @@ const AudioManager = (() => {
   }
 
   function playMemeLine(skinId, eventType) {
-    if (!('speechSynthesis' in window) || window.AudioManagerMuted) return;
-    
-    // Cancel any ongoing speech to prevent overlapping dialogs
-    try { window.speechSynthesis.cancel(); } catch(e){}
+    if (window.AudioManagerMuted) return;
 
     const lines = {
       modi: {
@@ -361,9 +358,37 @@ const AudioManager = (() => {
     };
 
     const charLines = lines[skinId];
-    if (charLines && charLines[eventType]) {
+    if (!charLines || !charLines[eventType]) return;
+
+    const textToSpeak = charLines[eventType];
+    const targetLang = skinId === 'meloni' ? 'it-IT' : 'hi-IN';
+    const targetRate = 0.90;
+    const targetPitch = skinId === 'gandhi' ? 0.70 : (skinId === 'meloni' ? 1.25 : 0.95);
+
+    // --- 1. CAPACITOR NATIVE TEXT-TO-SPEECH PLUGIN (Inside APK) ---
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech) {
+      const TTS = window.Capacitor.Plugins.TextToSpeech;
       try {
-        const utterance = new SpeechSynthesisUtterance(charLines[eventType]);
+        TTS.stop();
+        TTS.speak({
+          text: textToSpeak,
+          lang: targetLang,
+          rate: targetRate,
+          pitch: targetPitch,
+          volume: 1.0,
+          category: 'ambient'
+        });
+        return; // Success, exited!
+      } catch (e) {
+        console.error("Capacitor Native TTS failed, falling back to Web Speech API:", e);
+      }
+    }
+
+    // --- 2. FALLBACK: WEB SPEECH API (Regular Web Browsers) ---
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
         
         if (voices.length === 0) {
           voices = window.speechSynthesis.getVoices();
@@ -379,16 +404,16 @@ const AudioManager = (() => {
           utterance.voice = indVoice;
           utterance.lang = 'en-IN';
         } else {
-          utterance.lang = 'hi-IN'; // Request system to load Hindi
+          utterance.lang = targetLang;
         }
         
-        utterance.rate = 0.90; // slightly slower for clear, funny pronunciation
-        utterance.pitch = skinId === 'gandhi' ? 0.70 : (skinId === 'meloni' ? 1.25 : 0.95);
+        utterance.rate = targetRate;
+        utterance.pitch = targetPitch;
         utterance.volume = 1.0;
         
         window.speechSynthesis.speak(utterance);
       } catch(e) {
-        console.error("Android Speech synthesis error:", e);
+        console.error("Web Speech synthesis error:", e);
       }
     }
   }
