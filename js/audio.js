@@ -316,6 +316,16 @@ const AudioManager = (() => {
     }
   }
 
+  let voices = [];
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        voices = window.speechSynthesis.getVoices();
+      };
+    } catch(e){}
+  }
+
   function playMemeLine(skinId, eventType) {
     if (!('speechSynthesis' in window) || window.AudioManagerMuted) return;
     
@@ -355,17 +365,27 @@ const AudioManager = (() => {
       try {
         const utterance = new SpeechSynthesisUtterance(charLines[eventType]);
         
-        // Pick custom voice settings for premium voice acting quality!
-        const voices = window.speechSynthesis.getVoices();
-        const indVoice = voices.find(v => v.lang.includes('IN') || v.lang.includes('hi'));
-        if (indVoice) utterance.voice = indVoice;
+        if (voices.length === 0) {
+          voices = window.speechSynthesis.getVoices();
+        }
         
-        utterance.rate = 1.05; // arcade pacing
+        // Find best voice match
+        const indVoice = voices.find(v => v.lang.includes('IN') || v.lang.includes('hi') || v.lang.includes('en'));
+        if (indVoice) {
+          utterance.voice = indVoice;
+        }
+        
+        // Explicitly set language so Android System WebView knows which TTS package to use
+        utterance.lang = skinId === 'meloni' ? 'it-IT' : 'en-IN';
+        
+        utterance.rate = 0.95; // standard clear reading pace
         utterance.pitch = skinId === 'gandhi' ? 0.75 : (skinId === 'meloni' ? 1.2 : 0.95);
-        utterance.volume = 0.95;
+        utterance.volume = 1.0;
         
         window.speechSynthesis.speak(utterance);
-      } catch(e) {}
+      } catch(e) {
+        console.error("Android Speech synthesis error:", e);
+      }
     }
   }
 
