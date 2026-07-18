@@ -367,11 +367,19 @@ const AudioManager = (() => {
       }
     }
 
-    if (!rawText) return;
+    if (!rawText) {
+      logDebug("❌ No raw text found for event: " + eventType);
+      return;
+    }
 
     // Strip all emoji characters (surrogate pairs) so Android system TTS doesn't stutter or read emoji descriptions
     const textToSpeak = rawText.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
-    if (!textToSpeak) return;
+    if (!textToSpeak) {
+      logDebug("❌ Text empty after removing emojis: " + rawText);
+      return;
+    }
+
+    logDebug("🗣️ Attempting to speak: \"" + textToSpeak + "\" (Skin: " + skinId + ")");
 
     const targetLang = skinId === 'meloni' ? 'hi-IN' : 'hi-IN'; // prioritize Hindi for comedic dialogues
     const targetRate = 0.90;
@@ -381,6 +389,7 @@ const AudioManager = (() => {
     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech) {
       const TTS = window.Capacitor.Plugins.TextToSpeech;
       try {
+        logDebug("📱 Calling Capacitor native TTS speak...");
         TTS.stop();
         TTS.speak({
           text: textToSpeak,
@@ -390,21 +399,25 @@ const AudioManager = (() => {
           volume: 1.0,
           category: 'ambient'
         });
+        logDebug("✅ Capacitor native TTS speak triggered successfully!");
         return; // Success, exited!
       } catch (e) {
-        console.error("Capacitor Native TTS failed, falling back to Web Speech API:", e);
+        logDebug("⚠️ Capacitor Native TTS failed, falling back to Web Speech API: " + e.message);
       }
     }
 
     // --- 2. FALLBACK: WEB SPEECH API (Regular Web Browsers) ---
     if ('speechSynthesis' in window) {
       try {
+        logDebug("🌐 Triggering Web Speech API...");
         window.speechSynthesis.cancel();
+        
         const utterance = new SpeechSynthesisUtterance(textToSpeak);
         
         if (voices.length === 0) {
           voices = window.speechSynthesis.getVoices();
         }
+        logDebug("📚 Available voices: " + voices.length);
         
         // Find best Hindi voice match first, fallback to Indian English, then general English
         const hiVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('HI'));
@@ -414,24 +427,41 @@ const AudioManager = (() => {
         if (hiVoice) {
           utterance.voice = hiVoice;
           utterance.lang = 'hi-IN';
+          logDebug("🎯 Selected Hindi Voice: " + hiVoice.name);
         } else if (indVoice) {
           utterance.voice = indVoice;
           utterance.lang = 'en-IN';
+          logDebug("🎯 Selected Indian-English Voice: " + indVoice.name);
         } else if (enVoice) {
           utterance.voice = enVoice;
           utterance.lang = enVoice.lang;
+          logDebug("🎯 Selected Fallback English Voice: " + enVoice.name);
         } else {
           utterance.lang = 'en-US'; // default standard fallback
+          logDebug("🎯 No matching language voice found - using standard en-US default");
         }
         
         utterance.rate = targetRate;
         utterance.pitch = targetPitch;
         utterance.volume = 1.0;
         
+        utterance.onstart = () => {
+          logDebug("🔊 Audio speech started playing!");
+        };
+        utterance.onend = () => {
+          logDebug("🔇 Audio speech finished successfully.");
+        };
+        utterance.onerror = (err) => {
+          logDebug("❌ SpeechSynthesis error event: " + err.error + " (type: " + err.type + ")");
+        };
+        
         window.speechSynthesis.speak(utterance);
+        logDebug("⚡ speechSynthesis.speak() method called.");
       } catch(e) {
-        console.error("Web Speech synthesis error:", e);
+        logDebug("❌ Web Speech synthesis catch block error: " + e.message);
       }
+    } else {
+      logDebug("❌ Web Speech API (speechSynthesis) is NOT supported in this browser!");
     }
   }
 
@@ -465,6 +495,57 @@ const AudioManager = (() => {
         osc.stop(ctx.currentTime + t + d + 0.01);
       });
     } catch(e) {}
+  }
+
+  // Create debug logs element on the page dynamically
+  if (typeof document !== 'undefined') {
+    window.addEventListener('DOMContentLoaded', () => {
+      const logContainer = document.createElement('div');
+      logContainer.id = 'audio-debug-log';
+      logContainer.style.position = 'fixed';
+      logContainer.style.bottom = '10px';
+      logContainer.style.left = '10px';
+      logContainer.style.background = 'rgba(0,0,0,0.85)';
+      logContainer.style.color = '#00ff00';
+      logContainer.style.padding = '8px 12px';
+      logContainer.style.fontFamily = 'monospace';
+      logContainer.style.fontSize = '11px';
+      logContainer.style.maxHeight = '120px';
+      logContainer.style.overflowY = 'auto';
+      logContainer.style.zIndex = '999999';
+      logContainer.style.pointerEvents = 'none';
+      logContainer.style.borderRadius = '5px';
+      logContainer.style.border = '1px solid #00ff00';
+      logContainer.style.maxWidth = '320px';
+      logContainer.style.boxShadow = '0 0 10px rgba(0,255,0,0.2)';
+      logContainer.style.display = window.location.search.includes('debug') ? 'block' : 'none';
+      logContainer.innerHTML = '⚙️ Audio TTS Logger Active (Appended ?debug to show logs)<br>';
+      document.body.appendChild(logContainer);
+    });
+
+    // Pre-warm Web Speech API on first interaction to unlock voices list and bypass autoplay activation rules
+    const unlockSpeech = () => {
+      if ('speechSynthesis' in window) {
+        logDebug("👉 User clicked screen - pre-warming Web Speech API...");
+        const silentUtterance = new SpeechSynthesisUtterance('');
+        window.speechSynthesis.speak(silentUtterance);
+        window.speechSynthesis.getVoices();
+      }
+      document.removeEventListener('click', unlockSpeech);
+      document.removeEventListener('touchstart', unlockSpeech);
+    };
+    document.addEventListener('click', unlockSpeech);
+    document.addEventListener('touchstart', unlockSpeech);
+  }
+
+  function logDebug(msg) {
+    console.log("[AudioDebug] " + msg);
+    const debugDiv = document.getElementById('audio-debug-log');
+    if (debugDiv) {
+      debugDiv.style.display = 'block'; // make visible if any log happens
+      debugDiv.innerHTML += msg + "<br>";
+      debugDiv.scrollTop = debugDiv.scrollHeight;
+    }
   }
 
   return { init, playSwipe, playCorrect, playWrong, playCoin, playLevelUp, playCountdown, startBeat, stopBeat, playStartWhistle, playMemeLine, playMemeJingle };
