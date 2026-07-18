@@ -409,14 +409,19 @@ const AudioManager = (() => {
         // Find best Hindi voice match first, fallback to Indian English, then general English
         const hiVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('HI'));
         const indVoice = voices.find(v => v.lang.includes('IN') || v.lang.includes('in'));
+        const enVoice = voices.find(v => v.lang.includes('en') || v.lang.includes('EN'));
+        
         if (hiVoice) {
           utterance.voice = hiVoice;
           utterance.lang = 'hi-IN';
         } else if (indVoice) {
           utterance.voice = indVoice;
           utterance.lang = 'en-IN';
+        } else if (enVoice) {
+          utterance.voice = enVoice;
+          utterance.lang = enVoice.lang;
         } else {
-          utterance.lang = targetLang;
+          utterance.lang = 'en-US'; // default standard fallback
         }
         
         utterance.rate = targetRate;
