@@ -607,7 +607,8 @@ const AudioManager = (() => {
 
   // Create debug logs element on the page dynamically
   if (typeof document !== 'undefined') {
-    window.addEventListener('DOMContentLoaded', () => {
+    const createLogContainer = () => {
+      if (document.getElementById('audio-debug-log')) return;
       const logContainer = document.createElement('div');
       logContainer.id = 'audio-debug-log';
       logContainer.style.position = 'fixed';
@@ -629,7 +630,13 @@ const AudioManager = (() => {
       logContainer.style.display = window.location.search.includes('debug') ? 'block' : 'none';
       logContainer.innerHTML = '⚙️ Audio TTS Logger Active (Appended ?debug to show logs)<br>';
       document.body.appendChild(logContainer);
-    });
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', createLogContainer);
+    } else {
+      createLogContainer();
+    }
 
     // Pre-warm Web Speech API on first interaction to unlock voices list and bypass autoplay activation rules
     const unlockSpeech = () => {
