@@ -1651,7 +1651,8 @@ function showMemeCutscene(skinId, onDone) {
 
 function renderSkinsTab() {
   DOM.shopSkinsList.innerHTML = '';
-  Object.values(SKINS).forEach(skin => {
+  const MEME_IDS = ['modi', 'rahul', 'meloni', 'salman', 'gandhi'];
+  Object.values(SKINS).filter(s => !MEME_IDS.includes(s.id)).forEach(skin => {
     const isUnlocked = unlockedSkins.includes(skin.id);
     const isEquipped = equippedSkin === skin.id;
 
