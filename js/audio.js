@@ -334,29 +334,29 @@ const AudioManager = (() => {
 
     const lines = {
       modi: {
-        start: "Mitron! Aaj game shuru karte hain!",
-        correct: "Wah Modi Ji Wah!",
-        wrong: "Arey yaar! Rahul Ji Prime Minister ban gaye!"
+        start: "मित्रों! आज गेम शुरू करते हैं!",
+        correct: "वाह मोदी जी वाह! बहुत ही शानदार!",
+        wrong: "अरे यार! राहुल जी प्राइम मिनिस्टर बन गए!"
       },
       rahul: {
-        start: "Aloo daaloge sona nikalega! Game shuru!",
-        correct: "Maza aaya!",
-        wrong: "Khatam! Bye bye! Tata! Goodbye!"
+        start: "इधर से आलू डालो, उधर से सोना निकालो! खेल शुरू!",
+        correct: "मज़ा आया! बहुत बढ़िया!",
+        wrong: "खतम! बाय-बाय! टाटा! गुडबाय!"
       },
       meloni: {
-        start: "Hello friends! Melodi is back!",
-        correct: "Perfect match!",
-        wrong: "No melodi today! Ciao!"
+        start: "नमस्ते दोस्तों! मेलोडी फिर से आ गई है!",
+        correct: "क्या बात है! बहुत ही बढ़िया जोड़ी है!",
+        wrong: "अरे नहीं! आज मेलोडी वाइब्स खत्म हो गईं!"
       },
       salman: {
-        start: "Bhai is running! Footpath se door raho!",
-        correct: "Bhai rocks, barrier shocks!",
-        wrong: "Gaadi mai nahi chala raha tha! Driver ko bulao!"
+        start: "भाई दौड़ रहा है! फुटपाथ से सब दूर हो जाओ!",
+        correct: "क्या बात है! भाई बहुत खुश हुआ!",
+        wrong: "गाड़ी मैं नहीं चला रहा था! ड्राइवर को बुलाओ!"
       },
       gandhi: {
-        start: "Ahinsa param dharmo. Run for peace!",
-        correct: "Satyameva Jayate!",
-        wrong: "Hey Ram! Bapu is down!"
+        start: "अहिंसा परम धर्म। शांति के साथ दौड़ो!",
+        correct: "सत्यमेव जयते! सत्य की जीत हुई!",
+        wrong: "हे राम! बापू आज गिर गए!"
       }
     };
 
@@ -369,17 +369,21 @@ const AudioManager = (() => {
           voices = window.speechSynthesis.getVoices();
         }
         
-        // Find best voice match
-        const indVoice = voices.find(v => v.lang.includes('IN') || v.lang.includes('hi') || v.lang.includes('en'));
-        if (indVoice) {
+        // Find best Hindi voice match first, fallback to Indian English, then general English
+        const hiVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('HI'));
+        const indVoice = voices.find(v => v.lang.includes('IN') || v.lang.includes('in'));
+        if (hiVoice) {
+          utterance.voice = hiVoice;
+          utterance.lang = 'hi-IN';
+        } else if (indVoice) {
           utterance.voice = indVoice;
+          utterance.lang = 'en-IN';
+        } else {
+          utterance.lang = 'hi-IN'; // Request system to load Hindi
         }
         
-        // Explicitly set language so Android System WebView knows which TTS package to use
-        utterance.lang = skinId === 'meloni' ? 'it-IT' : 'en-IN';
-        
-        utterance.rate = 0.95; // standard clear reading pace
-        utterance.pitch = skinId === 'gandhi' ? 0.75 : (skinId === 'meloni' ? 1.2 : 0.95);
+        utterance.rate = 0.90; // slightly slower for clear, funny pronunciation
+        utterance.pitch = skinId === 'gandhi' ? 0.70 : (skinId === 'meloni' ? 1.25 : 0.95);
         utterance.volume = 1.0;
         
         window.speechSynthesis.speak(utterance);
