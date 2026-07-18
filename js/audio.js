@@ -326,7 +326,7 @@ const AudioManager = (() => {
     } catch(e){}
   }
 
-  function playMemeLine(skinId, eventType) {
+  function playMemeLine(skinId, eventType, customText = '') {
     if (window.AudioManagerMuted) return;
 
     const lines = {
@@ -357,11 +357,23 @@ const AudioManager = (() => {
       }
     };
 
-    const charLines = lines[skinId];
-    if (!charLines || !charLines[eventType]) return;
+    let rawText = "";
+    if (eventType === 'custom') {
+      rawText = customText;
+    } else {
+      const charLines = lines[skinId];
+      if (charLines && charLines[eventType]) {
+        rawText = charLines[eventType];
+      }
+    }
 
-    const textToSpeak = charLines[eventType];
-    const targetLang = skinId === 'meloni' ? 'it-IT' : 'hi-IN';
+    if (!rawText) return;
+
+    // Strip all emoji characters (surrogate pairs) so Android system TTS doesn't stutter or read emoji descriptions
+    const textToSpeak = rawText.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
+    if (!textToSpeak) return;
+
+    const targetLang = skinId === 'meloni' ? 'hi-IN' : 'hi-IN'; // prioritize Hindi for comedic dialogues
     const targetRate = 0.90;
     const targetPitch = skinId === 'gandhi' ? 0.70 : (skinId === 'meloni' ? 1.25 : 0.95);
 

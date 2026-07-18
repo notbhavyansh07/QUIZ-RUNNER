@@ -1511,65 +1511,66 @@ function renderMemeModTab() {
 }
 
 // ── Meme Cutscene Engine ───────────────────────────────────────
+// ── Meme Cutscene Engine ───────────────────────────────────────
 const CUTSCENE_DATA = {
   modi: {
     leftChar: 'modi', leftName: 'Modi Ji',
     rightChar: 'rahul', rightName: 'Rahul Ji',
-    ticker: '\uD83D\uDCF0 BREAKING: Modi Ji hits a barrier! Rahul Ji rushes to spot! | Parliament Emergency Called! | Amit Shah says: Situation Under Control! | \uD83D\uDCF0',
+    ticker: '📰 ब्रेकिंग न्यूज़: मोदी जी बैरियर से टकराए! राहुल जी घटना स्थल पर पहुंचे! | संसद की आपात बैठक बुलाई गई! | अमित शाह ने कहा: स्थिति पूरी तरह नियंत्रण में है! | 📰',
     dialogue: [
-      { who: 'left',  text: 'Mitron... main gir gaya. \uD83D\uDE14' },
-      { who: 'right', text: 'KHATAM! BYE BYE! TATA! Aab main PM banunga! \uD83D\uDC83' },
-      { who: 'left',  text: 'Yeh toh injustice hai Mitron... \uD83D\uDE24' },
-      { who: 'right', text: 'Congress waale bolenge... Jai Ho! \uD83C\uDF40' },
-      { who: 'left',  text: '56 inch ka seena! Phir uthenge! \uD83D\uDCAA' }
+      { who: 'left',  text: 'मित्रों... आज मैं गिर गया हूँ। 😔' },
+      { who: 'right', text: 'खतम! बाय-बाय! टाटा! अब मैं पीएम बनूँगा! 💃' },
+      { who: 'left',  text: 'यह तो सरासर नाइंसाफी है मित्रों... 😡' },
+      { who: 'right', text: 'कांग्रेस वाले बोलेंगे... जय हो! 🍀' },
+      { who: 'left',  text: '५६ इंच का सीना है! फिर उठेंगे! 💪' }
     ]
   },
   rahul: {
     leftChar: 'rahul', leftName: 'Rahul Ji',
     rightChar: 'modi', rightName: 'Modi Ji',
-    ticker: '\uD83D\uDCF0 BREAKING: Rahul Ji trips! Sona nikalne ki machine halts! | Congress calls emergency press conf! | \uD83D\uDCF0',
+    ticker: '📰 ब्रेकिंग न्यूज़: राहुल जी गिरे! सोना निकालने वाली मशीन बंद! | कांग्रेस की प्रेस कॉन्फ्रेंस बुलाई गई! | 📰',
     dialogue: [
-      { who: 'left',  text: 'Aloo ki tarah main bhi gir gaya... \uD83E\uDD14' },
-      { who: 'right', text: 'Mitron! Yahi hota hai jab Congress chalti hai! \uD83D\uDC4D' },
-      { who: 'left',  text: 'KHATAM! BYE BYE! TATA! GOODBYE! \uD83D\uDC4B' },
-      { who: 'right', text: 'Abki baar... Modi Sarkar! \uD83E\uDEE1' },
-      { who: 'left',  text: 'Main kal wapas aaunga. Pappu promise! \uD83D\uDE02' }
+      { who: 'left',  text: 'आलू की तरह मैं भी गिर गया यार... 😔' },
+      { who: 'right', text: 'मित्रों! यही होता है जब कांग्रेस चलती है! 💁‍♂️' },
+      { who: 'left',  text: 'खतम! बाय-बाय! टाटा! गुडबाय! 🤦‍♂️' },
+      { who: 'right', text: 'अबकी बार... मोदी सरकार! 🤝' },
+      { who: 'left',  text: 'मैं कल फिर वापस आऊँगा। पप्पू प्रॉमिस! 🤝' }
     ]
   },
   meloni: {
     leftChar: 'meloni', leftName: 'Meloni',
     rightChar: 'modi', rightName: 'Modi Ji',
-    ticker: '\uD83D\uDCF0 BREAKING: Meloni crashes! G7 meeting postponed! | Melodi vibes gone wrong! | \uD83D\uDCF0',
+    ticker: '📰 ब्रेकिंग न्यूज़: मेलोनी का एक्सीडेंट! जी-सेवन की बैठक टली! | मेलोडी वाइब्स खत्म! | 📰',
     dialogue: [
-      { who: 'left',  text: 'Hello friends... I crashed! \uD83D\uDE48' },
-      { who: 'right', text: 'Melodi Ji! Main helicopter bhejta hoon! \uD83D\uDE81' },
-      { who: 'left',  text: 'No melodi today! The barrier won! \uD83D\uDE24' },
-      { who: 'right', text: 'Italy-India friendship is forever! \uD83E\uDD1D' },
-      { who: 'left',  text: 'Next time... Melodi will WIN! \uD83D\uDCAA\uD83C\uDDEE\uD83C\uDDF9' }
+      { who: 'left',  text: 'हेलो फ्रेंड्स... मैं गिर गई! 💔' },
+      { who: 'right', text: 'मेलोनी जी! मैं हेलीकॉप्टर भेजता हूँ! 🚁' },
+      { who: 'left',  text: 'नो मेलोडी टुडे! आज बैरियर जीत गया! 😢' },
+      { who: 'right', text: 'भारत-इटली दोस्ती हमेशा अमर रहेगी! 🇮🇳🤝🇮🇹' },
+      { who: 'left',  text: 'अगली बार... मेलोडी ही जीतेगी! 💪' }
     ]
   },
   salman: {
     leftChar: 'salman', leftName: 'Salman Bhai',
     rightChar: 'modi', rightName: 'Modi Ji',
-    ticker: '\uD83D\uDCF0 BREAKING: Salman Khan hoverboard crash! Driver says he was sleeping! | Blackbuck escaped! | \uD83D\uDCF0',
+    ticker: '📰 ब्रेकिंग न्यूज़: सलमान खान का होवरबोर्ड क्रैश! ड्राइवर ने कहा- मैं सो रहा था! | काला हिरण बच निकला! | 📰',
     dialogue: [
-      { who: 'left',  text: 'Bhai was NOT driving! Hoverboard mein driver tha! \uD83D\uDE21' },
-      { who: 'right', text: 'Ek baar maafi maang lo Bhai... \uD83D\uDE05' },
-      { who: 'left',  text: 'Bhai rocks and barrier... also rocks. \uD83D\uDC94' },
-      { who: 'right', text: 'Dabangg ho ke uthna padega! \uD83D\uDCAA' },
-      { who: 'left',  text: 'Being Human... sometimes means falling! \uD83D\uDE4F' }
+      { who: 'left',  text: 'भाई गाड़ी नहीं चला रहा था! होवरबोर्ड में ड्राइवर था! 😠' },
+      { who: 'right', text: 'एक बार माफ़ी मांग लो भाई... 😅' },
+      { who: 'left',  text: 'भाई भी सॉलिड है, और बैरियर भी सॉलिड है! 💔' },
+      { who: 'right', text: 'दबंग होकर फिर से खड़ा होना पड़ेगा! 💪' },
+      { who: 'left',  text: 'बीइंग ह्यूमन... गिरने से ही इंसान सीखता है! 🙏' }
     ]
   },
   gandhi: {
     leftChar: 'gandhi', leftName: 'Bapu',
     rightChar: 'rahul', rightName: 'Rahul Ji',
-    ticker: '\uD83D\uDCF0 BREAKING: Mahatma Gandhi crashes! Dandi March halts for tea! | British Empire celebrates temporarily! | Ahinsa shield broken! | \uD83D\uDCF0',
+    ticker: '📰 ब्रेकिंग न्यूज़: महात्मा गांधी गिरे! दांडी मार्च चाय पीने रुका! | अहिंसा शील्ड टूटी! | 📰',
     dialogue: [
-      { who: 'left',  text: 'Hey Ram... even Bapu falls. \uD83D\uDE4F' },
-      { who: 'right', text: 'Bapu ji! Congress will carry your legacy! \uD83C\uDF40' },
-      { who: 'left',  text: 'An eye for an eye... makes everyone trip! \uD83D\uDE02' },
-      { who: 'right', text: 'Main laaon danda? \uD83E\uDE77' },
-      { who: 'left',  text: 'Ahinsa se chalte raho, Bapu uthenge. \uD83D\uDD4A\uFE0F' }
+      { who: 'left',  text: 'हे राम... बापू भी गिर गए। 🙏' },
+      { who: 'right', text: 'बापू जी! कांग्रेस आपकी विरासत संभालेगी! 🍀' },
+      { who: 'left',  text: 'आंख के बदले आंख... सबको अंधा बना देती है! 😔' },
+      { who: 'right', text: 'क्या मैं आपकी लाठी लाऊँ? 🦯' },
+      { who: 'left',  text: 'अहिंसा से चलते रहो, बापू फिर उठेंगे। 🕊️' }
     ]
   }
 };
@@ -1637,11 +1638,14 @@ function showMemeCutscene(skinId, onDone) {
     bubble.style.animation = 'mcsBubblePop 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards';
     bubbleText.textContent = line.text;
     
-    // Speak it
-    AudioManager.playMemeLine(skinId, dialogueIdx === 1 ? 'start' : (line.who === 'left' ? 'wrong' : 'correct'));
+    // Identify who is speaking (left character or right character)
+    const speakingCharId = (line.who === 'left' ? data.leftChar : data.rightChar);
     
-    const delay = 1600 + line.text.length * 40;
-    setTimeout(nextDialogue, Math.min(delay, 3200));
+    // Speak the actual bubble text
+    AudioManager.playMemeLine(speakingCharId, 'custom', line.text);
+    
+    const delay = 1600 + line.text.length * 55;
+    setTimeout(nextDialogue, Math.min(delay, 3400));
   }
   
   // Play cutscene jingle
