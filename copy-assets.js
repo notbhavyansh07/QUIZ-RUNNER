@@ -37,7 +37,8 @@ function copyFolderRecursiveSync(source, target) {
       if (fs.lstatSync(curSource).isDirectory()) {
         copyFolderRecursiveSync(curSource, targetFolder);
       } else {
-        fs.copyFileSync(curSource, path.join(targetFolder, file));
+        const content = fs.readFileSync(curSource);
+        fs.writeFileSync(path.join(targetFolder, file), content);
       }
     });
   }
@@ -47,7 +48,8 @@ function copyFolderRecursiveSync(source, target) {
 filesToCopy.forEach(file => {
   const src = path.join(__dirname, file);
   if (fs.existsSync(src)) {
-    fs.copyFileSync(src, path.join(destDir, file));
+    const content = fs.readFileSync(src);
+    fs.writeFileSync(path.join(destDir, file), content);
     console.log(`Copied file: ${file}`);
   }
 });
