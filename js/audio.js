@@ -319,12 +319,95 @@ const AudioManager = (() => {
   let voices = [];
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
     try {
-      window.speechSynthesis.getVoices();
+      voices = window.speechSynthesis.getVoices();
+      let attempts = 0;
+      const interval = setInterval(() => {
+        const list = window.speechSynthesis.getVoices();
+        if (list.length > 0) {
+          voices = list;
+          clearInterval(interval);
+        }
+        if (++attempts > 10) clearInterval(interval);
+      }, 200);
+
       window.speechSynthesis.onvoiceschanged = () => {
         voices = window.speechSynthesis.getVoices();
       };
     } catch(e){}
   }
+
+  // Transliteration dictionary from Devnagari Hindi to Roman Hinglish (for English-only TTS engines like Microsoft Edge on standard Windows)
+  const HINDI_TRANSLITERATIONS = {
+    // Modi
+    "मित्रों... आज मैं गिर गया हूँ।": "Mitron... aaj main gir gaya hoon.",
+    "मित्रों... आज मैं गिर गया हूँ। 😔": "Mitron... aaj main gir gaya hoon.",
+    "यह तो सरासर नाइंसाफी है मित्रों...": "Yeh toh sarasar injustice hai mitron...",
+    "यह तो सरासर नाइंसाफी है मित्रों... 😡": "Yeh toh sarasar injustice hai mitron...",
+    "५६ इंच का सीना है! फिर उठेंगे!": "56 inch ka seena hai! Phir uthenge!",
+    "५६ इंच का सीना है! फिर उठेंगे! 💪": "56 inch ka seena hai! Phir uthenge!",
+    // Rahul
+    "खतम! बाय-बाय! टाटा! अब मैं पीएम बनूँगा!": "Khatam! Bye bye! Tata! Ab main PM banunga!",
+    "खतम! बाय-बाय! टाटा! अब मैं पीएम बनूँगा! 💃": "Khatam! Bye bye! Tata! Ab main PM banunga!",
+    "कांग्रेस वाले बोलेंगे... जय हो!": "Congress waale bolenge... Jai ho!",
+    "कांग्रेस वाले बोलेंगे... जय हो! 🍀": "Congress waale bolenge... Jai ho!",
+    "आलू की तरह मैं भी गिर गया यार...": "Aloo ki tarah main bhi gir gaya yaar...",
+    "आलू की तरह मैं भी गिर गया यार... 😔": "Aloo ki tarah main bhi gir gaya yaar...",
+    "खतम! बाय-बाय! टाटा! गुडबाय!": "Khatam! Bye bye! Tata! Goodbye!",
+    "खतम! बाय-बाय! टाटा! गुडबाय! 🤦‍♂️": "Khatam! Bye bye! Tata! Goodbye!",
+    "मैं कल फिर वापस आऊँगा। पप्पू प्रॉमिस!": "Main kal phir waapas aaunga. Pappu promise!",
+    "मैं कल फिर वापस आऊँगा। पप्पू प्रॉमिस! 🤝": "Main kal phir waapas aaunga. Pappu promise!",
+    // Meloni
+    "हेलो फ्रेंड्स... मैं गिर गई!": "Hello friends... main gir gayi!",
+    "हेलो फ्रेंड्स... मैं गिर गई! 💔": "Hello friends... main gir gayi!",
+    "मेलोनी जी! मैं हेलीकॉप्टर भेजता हूँ!": "Meloni ji! Main helicopter bhejta hoon!",
+    "मेलोनी जी! मैं हेलीकॉप्टर भेजता हूँ! 🚁": "Meloni ji! Main helicopter bhejta hoon!",
+    "नो मेलोडी टुडे! आज बैरियर जीत गया!": "No Melodi today! Aaj barrier jeet gaya!",
+    "नो मेलोडी टुडे! आज बैरियर जीत गया! 😢": "No Melodi today! Aaj barrier jeet gaya!",
+    "भारत-इटली दोस्ती हमेशा अमर रहेगी!": "Bharat Italy dosti hamesha amar rahegi!",
+    "भारत-इटली दोस्ती हमेशा अमर रहेगी! 🇮🇳🤝🇮🇹": "Bharat Italy dosti hamesha amar rahegi!",
+    "अगली बार... मेलोडी ही जीतेगी!": "Agli baar... Melodi hi jeetegi!",
+    "अगली बार... मेलोडी ही जीतेगी! 💪": "Agli baar... Melodi hi jeetegi!",
+    // Salman
+    "भाई गाड़ी नहीं चला रहा था! होवरबोर्ड में ड्राइवर था!": "Bhai gaadi nahi chala raha tha! Hoverboard mein driver tha!",
+    "भाई गाड़ी नहीं चला रहा था! होवरबोर्ड में ड्राइवर था! 😠": "Bhai gaadi nahi chala raha tha! Hoverboard mein driver tha!",
+    "एक बार माफ़ी मांग लो भाई...": "Ek baar maafi maang lo bhai...",
+    "एक बार माफ़ी मांग लो भाई... 😅": "Ek baar maafi maang lo bhai...",
+    "भाई भी सॉलिड है, और बैरियर भी सॉलिड है!": "Bhai bhi solid hai, aur barrier bhi solid hai!",
+    "भाई भी सॉलिड है, और बैरियर भी सॉलिड है! 💔": "Bhai bhi solid hai, aur barrier bhi solid hai!",
+    "दबंग होकर फिर से खड़ा होना पड़ेगा!": "Dabangg hokar phir se khada hona padega!",
+    "दबंग होकर फिर से खड़ा होना पड़ेगा! 💪": "Dabangg hokar phir se khada hona padega!",
+    "बीइंग ह्यूमन... गिरने से ही इंसान सीखता है!": "Being Human... girne se hi insaan seekhta hai!",
+    "बीइंग HUMAN... गिरने से ही इंसान सीखता है! 🙏": "Being Human... girne se hi insaan seekhta hai!",
+    "बीइंग ह्यूमन... गिरने से ही इंसान सीखता है! 🙏": "Being Human... girne se hi insaan seekhta hai!",
+    // Gandhi
+    "हे राम... बापू भी गिर गए।": "Hey Ram... Bapu bhi gir gaye.",
+    "हे राम... बापू भी गिर गए। 🙏": "Hey Ram... Bapu bhi gir gaye.",
+    "बापू जी! कांग्रेस आपकी विरासत संभालेगी!": "Bapu ji! Congress aapki legacy sambhalegi!",
+    "बापू जी! कांग्रेस आपकी विरासत संभालेगी! 🍀": "Bapu ji! Congress aapki legacy sambhalegi!",
+    "आंख के बदले आंख... सबको अंधा बना देती है!": "Aankh ke badle aankh... sabko andha bana deti hai!",
+    "आंख के बदले आंख... सबको अंधा बना देती है! 😔": "Aankh ke badle aankh... sabko andha bana deti hai!",
+    "क्या मैं आपकी लाठी लाऊँ?": "Kya main aapki laathi laoon?",
+    "क्या मैं आपकी लाठी लाऊँ? 🦯": "Kya main aapki laathi laoon?",
+    "अहिंसा से चलते रहो, बापू फिर उठेंगे।": "Ahinsa se chalte raho, Bapu phir uthenge.",
+    "अहिंसा से चलते रहो, बापू फिर उठेंगे। 🕊️": "Ahinsa se chalte raho, Bapu phir uthenge.",
+    // Fixed catchphrases / event lines
+    "मित्रों! आज गेम शुरू करते हैं!": "Mitron! Aaj game shuru karte hain!",
+    "वाह मोदी जी वाह! बहुत ही शानदार!": "Wah Modi ji wah! Bahut hi shandaar!",
+    "अरे यार! राहुल जी प्राइम मिनिस्टर बन गए!": "Are yaar! Rahul ji Prime Minister ban gaye!",
+    "इधर से आलू डालो, उधर से सोना निकालो! खेल शुरू!": "Idhar se aloo daalo, udhar se sona nikaalo! Khel shuru!",
+    "मज़ा आया! बहुत बढ़िया!": "Maza aaya! Bahut badhiya!",
+    "नमस्ते दोस्तों! मेलोडी फिर से आ गई है!": "Namaste doston! Melodi phir se aa gayi hai!",
+    "क्या बात है! बहुत ही बढ़िया जोड़ी है!": "Kya baat hai! Bahut hi badhiya jodi hai!",
+    "अरे नहीं! आज मेलोडी वाइब्स खत्म हो गईं!": "Are nahi! Aaj Melodi vibes khatam ho gayi!",
+    "भाई दौड़ रहा है! फुटपाथ से सब दूर हो जाओ!": "Bhai daud raha hai! Footpath se sab door ho jao!",
+    "क्या बात है! भाई बहुत खुश हुआ!": "Kya baat hai! Bhai bahut khush hua!",
+    "गाड़ी मैं नहीं चला रहा था! ड्राइवर को बुलाओ!": "Gaadi main nahi chala raha tha! Driver ko bulao!",
+    "अहिंसा परम धर्म। शांति के साथ दौड़ो!": "Ahinsa param dharma. Shanti ke sath daudo!",
+    "सत्यमेव जयते! सत्य की जीत हुई!": "Satyamev Jayate! Satya ki jeet hui!",
+    "हे राम! बापू आज गिर गए!": "Hey Ram! Bapu aaj gir gaye!",
+    "मित्रों! यही होता है जब कांग्रेस चलती है!": "Mitron! Yahi hota hai jab Congress chalti hai!",
+    "अबकी बार... मोदी सरकार!": "Abki baar... Modi Sarkar!"
+  };
 
   function playMemeLine(skinId, eventType, customText = '') {
     if (window.AudioManagerMuted) return;
@@ -373,7 +456,7 @@ const AudioManager = (() => {
     }
 
     // Strip all emoji characters (surrogate pairs) so Android system TTS doesn't stutter or read emoji descriptions
-    const textToSpeak = rawText.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
+    let textToSpeak = rawText.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
     if (!textToSpeak) {
       logDebug("❌ Text empty after removing emojis: " + rawText);
       return;
@@ -410,9 +493,10 @@ const AudioManager = (() => {
     if ('speechSynthesis' in window) {
       try {
         logDebug("🌐 Triggering Web Speech API...");
-        window.speechSynthesis.cancel();
         
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        // Reset and clear the Chromium speech queue (resume first to resolve any freeze bugs, then cancel)
+        window.speechSynthesis.resume();
+        window.speechSynthesis.cancel();
         
         if (voices.length === 0) {
           voices = window.speechSynthesis.getVoices();
@@ -424,23 +508,47 @@ const AudioManager = (() => {
         const indVoice = voices.find(v => v.lang.includes('IN') || v.lang.includes('in'));
         const enVoice = voices.find(v => v.lang.includes('en') || v.lang.includes('EN'));
         
+        let selectedVoice = null;
+        let selectedLang = 'en-US';
+        
         if (hiVoice) {
-          utterance.voice = hiVoice;
-          utterance.lang = 'hi-IN';
+          selectedVoice = hiVoice;
+          selectedLang = 'hi-IN';
           logDebug("🎯 Selected Hindi Voice: " + hiVoice.name);
         } else if (indVoice) {
-          utterance.voice = indVoice;
-          utterance.lang = 'en-IN';
+          selectedVoice = indVoice;
+          selectedLang = 'en-IN';
           logDebug("🎯 Selected Indian-English Voice: " + indVoice.name);
         } else if (enVoice) {
-          utterance.voice = enVoice;
-          utterance.lang = enVoice.lang;
+          selectedVoice = enVoice;
+          selectedLang = enVoice.lang;
           logDebug("🎯 Selected Fallback English Voice: " + enVoice.name);
         } else {
-          utterance.lang = 'en-US'; // default standard fallback
+          selectedLang = 'en-US'; // default standard fallback
           logDebug("🎯 No matching language voice found - using standard en-US default");
         }
         
+        // CRITICAL FALLBACK: If selected voice uses an English engine (en-*), we MUST translate the 
+        // Devnagari script to Roman Hinglish, otherwise the English voice will be completely silent!
+        if (selectedLang.startsWith('en')) {
+          // Check for Devnagari match in our dictionary
+          const rawMatch = rawText.trim();
+          const cleanMatch = textToSpeak.trim();
+          const romanHinglish = HINDI_TRANSLITERATIONS[rawMatch] || HINDI_TRANSLITERATIONS[cleanMatch];
+          
+          if (romanHinglish) {
+            logDebug("📝 English voice detected. Transliterating Devnagari \"" + textToSpeak + "\" to Roman Hinglish \"" + romanHinglish + "\"");
+            textToSpeak = romanHinglish;
+          } else {
+            logDebug("⚠️ No Hinglish transliteration mapped for: \"" + textToSpeak + "\". Attempting spelling fallback.");
+          }
+        }
+        
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+        }
+        utterance.lang = selectedLang;
         utterance.rate = targetRate;
         utterance.pitch = targetPitch;
         utterance.volume = 1.0;
